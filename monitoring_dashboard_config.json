@@ -1,0 +1,92 @@
+{
+  "dashboard": {
+    "name": "NPHIES-AI Observability",
+    "description": "Unified monitoring for API latency, claims success, AI inference, and compliance events",
+    "datasources": {
+      "metrics": "cloudwatch",
+      "logs": "cloudwatch-logs",
+      "traces": "xray"
+    },
+    "widgets": [
+      {
+        "type": "metric",
+        "title": "API Latency (p50/p95/p99)",
+        "metrics": [
+          ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "nphies-alb", {"stat": "p50"}],
+          ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "nphies-alb", {"stat": "p95"}],
+          ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "nphies-alb", {"stat": "p99"}]
+        ],
+        "yAxis": "Milliseconds",
+        "thresholds": [
+          {"label": "Warning", "value": 400, "color": "orange"},
+          {"label": "Critical", "value": 500, "color": "red"}
+        ]
+      },
+      {
+        "type": "metric",
+        "title": "Claim Submission Success Rate",
+        "metrics": [
+          ["Custom/NPHIES", "ClaimsSuccess", "Environment", "prod", {"stat": "sum"}],
+          ["Custom/NPHIES", "ClaimsFailure", "Environment", "prod", {"stat": "sum"}]
+        ],
+        "calculation": "successRate = ClaimsSuccess / (ClaimsSuccess + ClaimsFailure)",
+        "thresholds": [
+          {"label": "Target", "value": 0.98, "color": "green"},
+          {"label": "Alert", "value": 0.95, "color": "red"}
+        ]
+      },
+      {
+        "type": "metric",
+        "title": "AI Inference Latency",
+        "metrics": [
+          ["Custom/NPHIES", "BedrockLatency", "Model", "clinical-qa", {"stat": "avg"}],
+          ["Custom/NPHIES", "SageMakerLatency", "Endpoint", "nphies-healthcare-model", {"stat": "avg"}]
+        ],
+        "thresholds": [
+          {"label": "Warning", "value": 1500, "color": "orange"},
+          {"label": "Critical", "value": 2500, "color": "red"}
+        ]
+      },
+      {
+        "type": "metric",
+        "title": "Eligibility Checks per Minute",
+        "metrics": [
+          ["Custom/NPHIES", "EligibilityRequests", "Environment", "prod", {"stat": "sum"}]
+        ],
+        "thresholds": [
+          {"label": "Baseline", "value": 120, "color": "blue"}
+        ]
+      },
+      {
+        "type": "metric",
+        "title": "Error Budget Burn Rate",
+        "metrics": [
+          ["Custom/NPHIES", "Availability", "Service", "api", {"stat": "avg"}],
+          ["Custom/NPHIES", "SLO", "Service", "api", {"stat": "avg"}]
+        ],
+        "calculation": "burnRate = (1 - Availability) / (1 - SLO)",
+        "thresholds": [
+          {"label": "Fast burn", "value": 2.0, "color": "red"},
+          {"label": "Normal", "value": 1.0, "color": "green"}
+        ]
+      },
+      {
+        "type": "log",
+        "title": "Security Events",
+        "query": "fields @timestamp, userId, action, patientIdHash, outcome, sourceIp | filter action like /AUTH|ACCESS_DENIED|PHI_EXPORT/ | sort @timestamp desc | limit 50"
+      },
+      {
+        "type": "log",
+        "title": "Audit Trail",
+        "query": "fields @timestamp, workflowId, stateFrom, stateTo, actorRole, entityType | filter entityType in ['claim','eligibility','preauth'] | sort @timestamp desc | limit 100"
+      },
+      {
+        "type": "alarm",
+        "title": "Active Alarms",
+        "alarmNames": [
+          "nphies-api-5xx", "nphies-bedrock-latency", "nphies-queue-depth", "nphies-security-guardduty"
+        ]
+      }
+    ]
+  }
+}

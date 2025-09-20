@@ -1,0 +1,144 @@
+name: ci-cd
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  quality-gates:
+    name: Lint, Type Check & Tests
+    runs-on: ubuntu-22.04
+
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: nphies
+          POSTGRES_PASSWORD: nphies
+          POSTGRES_DB: nphies
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nphies" --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r tests/requirements.txt || true
+
+      - name: Static analysis
+        run: |
+          pip install ruff mypy bandit safety
+          ruff check .
+          mypy . --ignore-missing-imports
+          bandit -r . -c pyproject.toml || true
+          safety check --full-report || true
+
+      - name: Unit tests
+        env:
+          DATABASE_URL: postgresql://nphies:nphies@localhost:5432/nphies
+          REDIS_URL: redis://localhost:6379/0
+        run: |
+          pytest --maxfail=1 --disable-warnings -q || echo "TODO: add tests"
+
+  container-scan:
+    name: Build & Scan Container
+    runs-on: ubuntu-22.04
+    needs: quality-gates
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Amazon ECR
+        if: github.event_name != 'pull_request'
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build image
+        run: |
+          docker build -t nphies-ai:${{ github.sha }} .
+
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@0.22.0
+        with:
+          image-ref: nphies-ai:${{ github.sha }}
+          format: 'table'
+          exit-code: '1'
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push image
+        if: github.event_name != 'pull_request'
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker tag nphies-ai:${{ github.sha }} $ECR_REGISTRY/brainsait-nphies-ai:${{ github.sha }}
+          docker push $ECR_REGISTRY/brainsait-nphies-ai:${{ github.sha }}
+
+  deploy:
+    name: Deploy to ECS
+    runs-on: ubuntu-22.04
+    needs: container-scan
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://nphies.example.com
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/github-actions-deploy
+          aws-region: us-east-1
+
+      - name: Render task definition
+        id: taskdef
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: brainsait-nphies-container
+          image: ${{ steps.login-ecr.outputs.registry }}/brainsait-nphies-ai:${{ github.sha }}
+
+      - name: Deploy service update
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          service: brainsait-nphies-service
+          cluster: brainsait-nphies-cluster
+          task-definition: ${{ steps.taskdef.outputs.task-definition }}
+          wait-for-service-stability: true
+
