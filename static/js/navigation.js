@@ -1,639 +1,503 @@
 /**
- * Enhanced Navigation Components for NPHIES-AI Healthcare Platform
- * Comprehensive navigation with breadcrumbs, active states, and accessibility
+ * Enhanced Navigation System for NPHIES-AI Healthcare Platform
+ * Fixes routing issues and provides smooth SPA navigation
  */
 
 class NavigationManager {
     constructor() {
+        this.routes = new Map();
         this.currentPath = window.location.pathname;
-        this.navigationItems = new Map();
-        this.breadcrumbHistory = [];
-        this.shortcuts = new Map();
         this.init();
     }
 
     init() {
-        this.setupNavigationItems();
-        this.createNavigationComponents();
-        this.setupKeyboardShortcuts();
-        this.setupAccessibility();
-        this.bindEvents();
+        this.setupRoutes();
+        this.setupEventListeners();
+        this.handleInitialLoad();
     }
 
-    setupNavigationItems() {
-        const navConfig = [
-            {
-                id: 'dashboard',
-                path: '/dashboard',
-                title: 'Dashboard',
-                icon: 'dashboard',
-                shortcut: 'Alt+D',
-                category: 'main',
-                description: 'Main dashboard with overview metrics'
-            },
-            {
-                id: 'nphies',
-                path: '/nphies',
-                title: 'NPHIES Integration',
-                icon: 'integration',
-                shortcut: 'Alt+N',
-                category: 'main',
-                description: 'Saudi Health Insurance integration'
-            },
-            {
-                id: 'eligibility',
-                path: '/eligibility',
-                title: 'Eligibility Check',
-                icon: 'check-circle',
-                shortcut: 'Alt+E',
-                category: 'services',
-                description: 'Verify patient insurance eligibility'
-            },
-            {
-                id: 'claims',
-                path: '/claims',
-                title: 'Claims Processing',
-                icon: 'file-text',
-                shortcut: 'Alt+C',
-                category: 'services',
-                description: 'Submit and track insurance claims'
-            },
-            {
-                id: 'pre-authorization',
-                path: '/pre-authorization',
-                title: 'Pre-Authorization',
-                icon: 'shield-check',
-                shortcut: 'Alt+P',
-                category: 'services',
-                description: 'Request procedure pre-authorization'
-            },
-            {
-                id: 'ai-assistant',
-                path: '/ai-assistant',
-                title: 'AI Assistant',
-                icon: 'bot',
-                shortcut: 'Alt+A',
-                category: 'ai',
-                description: 'Intelligent healthcare assistant'
-            },
-            {
-                id: 'health-services',
-                path: '/health-services',
-                title: 'AWS Health Services',
-                icon: 'cloud',
-                shortcut: 'Alt+H',
-                category: 'ai',
-                description: 'AWS AI and ML health services'
-            },
-            {
-                id: 'ai-dashboard',
-                path: '/ai-dashboard',
-                title: 'AI Dashboard',
-                icon: 'brain',
-                shortcut: 'Alt+I',
-                category: 'ai',
-                description: 'AI performance and analytics'
-            },
-            {
-                id: 'notifications',
-                path: '/notifications',
-                title: 'Notifications',
-                icon: 'bell',
-                shortcut: 'Alt+T',
-                category: 'user',
-                description: 'System notifications and alerts'
-            },
-            {
-                id: 'profile',
-                path: '/profile',
-                title: 'Profile',
-                icon: 'user',
-                shortcut: 'Alt+U',
-                category: 'user',
-                description: 'User profile and preferences'
-            },
-            {
-                id: 'settings',
-                path: '/settings',
-                title: 'Settings',
-                icon: 'settings',
-                shortcut: 'Alt+S',
-                category: 'user',
-                description: 'Application settings and configuration'
-            }
+    setupRoutes() {
+        // Define all valid routes
+        const routes = [
+            { path: '/', title: 'Home' },
+            { path: '/dashboard', title: 'Dashboard' },
+            { path: '/nphies', title: 'NPHIES Integration' },
+            { path: '/claims', title: 'Claims Processing' },
+            { path: '/eligibility', title: 'Eligibility Check' },
+            { path: '/pre-authorization', title: 'Pre-Authorization' },
+            { path: '/ai-assistant', title: 'AI Assistant' },
+            { path: '/health-services', title: 'AWS Health Services' },
+            { path: '/profile', title: 'Profile' },
+            { path: '/settings', title: 'Settings' },
+            { path: '/notifications', title: 'Notifications' },
+            { path: '/login', title: 'Login' }
         ];
 
-        navConfig.forEach(item => {
-            this.navigationItems.set(item.id, item);
-            if (item.shortcut) {
-                this.shortcuts.set(item.shortcut, item.path);
-            }
+        routes.forEach(route => {
+            this.routes.set(route.path, route);
         });
     }
 
-    createNavigationComponents() {
-        this.createMainNavigation();
-        this.createBreadcrumbs();
-        this.createQuickActions();
-        this.createMobileNavigation();
-    }
-
-    createMainNavigation() {
-        const navContainer = document.getElementById('main-navigation') || this.createNavContainer();
-        
-        const categories = this.groupNavigationByCategory();
-        let navHTML = '';
-
-        Object.entries(categories).forEach(([category, items]) => {
-            navHTML += `
-                <div class="nav-category" data-category="${category}">
-                    <h3 class="nav-category-title">${this.getCategoryTitle(category)}</h3>
-                    <ul class="nav-list">
-                        ${items.map(item => this.createNavItem(item)).join('')}
-                    </ul>
-                </div>
-            `;
-        });
-
-        navContainer.innerHTML = navHTML;
-        this.updateActiveNavigation();
-    }
-
-    createNavContainer() {
-        const container = document.createElement('nav');
-        container.id = 'main-navigation';
-        container.className = 'main-navigation';
-        container.setAttribute('role', 'navigation');
-        container.setAttribute('aria-label', 'Main navigation');
-        
-        const sidebar = document.querySelector('.sidebar') || document.body;
-        sidebar.appendChild(container);
-        
-        return container;
-    }
-
-    createNavItem(item) {
-        const isActive = this.currentPath === item.path;
-        const activeClass = isActive ? 'active' : '';
-        
-        return `
-            <li class="nav-item ${activeClass}" data-nav-id="${item.id}">
-                <a href="${item.path}" 
-                   data-route="${item.path}"
-                   class="nav-link ${activeClass}"
-                   title="${item.description}"
-                   aria-label="${item.title} - ${item.description}"
-                   ${item.shortcut ? `data-shortcut="${item.shortcut}"` : ''}>
-                    <i class="nav-icon icon-${item.icon}" aria-hidden="true"></i>
-                    <span class="nav-text">${item.title}</span>
-                    ${item.shortcut ? `<span class="nav-shortcut">${item.shortcut}</span>` : ''}
-                </a>
-            </li>
-        `;
-    }
-
-    groupNavigationByCategory() {
-        const categories = {};
-        
-        this.navigationItems.forEach(item => {
-            if (!categories[item.category]) {
-                categories[item.category] = [];
-            }
-            categories[item.category].push(item);
-        });
-        
-        return categories;
-    }
-
-    getCategoryTitle(category) {
-        const titles = {
-            main: 'Main',
-            services: 'Healthcare Services',
-            ai: 'AI & Analytics',
-            user: 'User & Settings'
-        };
-        return titles[category] || category.charAt(0).toUpperCase() + category.slice(1);
-    }
-
-    createBreadcrumbs() {
-        const breadcrumbContainer = document.getElementById('breadcrumbs') || this.createBreadcrumbContainer();
-        this.updateBreadcrumbs();
-    }
-
-    createBreadcrumbContainer() {
-        const container = document.createElement('nav');
-        container.id = 'breadcrumbs';
-        container.className = 'breadcrumbs';
-        container.setAttribute('role', 'navigation');
-        container.setAttribute('aria-label', 'Breadcrumb navigation');
-        
-        const header = document.querySelector('.header') || document.querySelector('.main-content');
-        if (header) {
-            header.insertBefore(container, header.firstChild);
-        } else {
-            document.body.appendChild(container);
-        }
-        
-        return container;
-    }
-
-    updateBreadcrumbs() {
-        const container = document.getElementById('breadcrumbs');
-        if (!container) return;
-
-        const breadcrumbs = this.generateBreadcrumbs();
-        
-        container.innerHTML = `
-            <ol class="breadcrumb-list" role="list">
-                ${breadcrumbs.map((crumb, index) => {
-                    const isLast = index === breadcrumbs.length - 1;
-                    return `
-                        <li class="breadcrumb-item ${isLast ? 'active' : ''}" role="listitem">
-                            ${isLast ? 
-                                `<span class="breadcrumb-current" aria-current="page">${crumb.title}</span>` :
-                                `<a href="${crumb.path}" data-route="${crumb.path}" class="breadcrumb-link">${crumb.title}</a>`
-                            }
-                            ${!isLast ? '<i class="breadcrumb-separator" aria-hidden="true">›</i>' : ''}
-                        </li>
-                    `;
-                }).join('')}
-            </ol>
-        `;
-    }
-
-    generateBreadcrumbs() {
-        const breadcrumbs = [{ title: 'Home', path: '/' }];
-        
-        if (this.currentPath !== '/') {
-            const currentItem = Array.from(this.navigationItems.values())
-                .find(item => item.path === this.currentPath);
-            
-            if (currentItem) {
-                // Add parent breadcrumbs based on category
-                if (currentItem.category !== 'main') {
-                    breadcrumbs.push({
-                        title: this.getCategoryTitle(currentItem.category),
-                        path: this.getCategoryRootPath(currentItem.category)
-                    });
-                }
-                
-                breadcrumbs.push({
-                    title: currentItem.title,
-                    path: currentItem.path
-                });
-            } else {
-                // Fallback for unknown paths
-                breadcrumbs.push({
-                    title: this.pathToTitle(this.currentPath),
-                    path: this.currentPath
-                });
-            }
-        }
-        
-        return breadcrumbs;
-    }
-
-    getCategoryRootPath(category) {
-        const rootPaths = {
-            services: '/dashboard',
-            ai: '/ai-dashboard',
-            user: '/profile'
-        };
-        return rootPaths[category] || '/dashboard';
-    }
-
-    pathToTitle(path) {
-        return path.split('/').pop().split('-').map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1)
-        ).join(' ') || 'Page';
-    }
-
-    createQuickActions() {
-        const quickActionsContainer = document.getElementById('quick-actions') || this.createQuickActionsContainer();
-        
-        const quickActions = [
-            { id: 'new-claim', title: 'New Claim', icon: 'plus', action: () => window.navigate('/claims') },
-            { id: 'check-eligibility', title: 'Check Eligibility', icon: 'search', action: () => window.navigate('/eligibility') },
-            { id: 'ai-chat', title: 'AI Assistant', icon: 'message-circle', action: () => window.navigate('/ai-assistant') },
-            { id: 'notifications', title: 'Notifications', icon: 'bell', action: () => this.toggleNotifications() }
-        ];
-
-        quickActionsContainer.innerHTML = `
-            <div class="quick-actions-list">
-                ${quickActions.map(action => `
-                    <button class="quick-action-btn" 
-                            data-action="${action.id}"
-                            title="${action.title}"
-                            aria-label="${action.title}">
-                        <i class="icon-${action.icon}" aria-hidden="true"></i>
-                        <span class="quick-action-text">${action.title}</span>
-                    </button>
-                `).join('')}
-            </div>
-        `;
-
-        // Bind quick action events
-        quickActions.forEach(action => {
-            const btn = quickActionsContainer.querySelector(`[data-action="${action.id}"]`);
-            if (btn) {
-                btn.addEventListener('click', action.action);
-            }
-        });
-    }
-
-    createQuickActionsContainer() {
-        const container = document.createElement('div');
-        container.id = 'quick-actions';
-        container.className = 'quick-actions';
-        
-        const header = document.querySelector('.header') || document.querySelector('.main-content');
-        if (header) {
-            header.appendChild(container);
-        }
-        
-        return container;
-    }
-
-    createMobileNavigation() {
-        const mobileNav = document.getElementById('mobile-navigation') || this.createMobileNavContainer();
-        
-        mobileNav.innerHTML = `
-            <button class="mobile-nav-toggle" 
-                    aria-label="Toggle navigation menu"
-                    aria-expanded="false"
-                    aria-controls="mobile-nav-menu">
-                <span class="hamburger-line"></span>
-                <span class="hamburger-line"></span>
-                <span class="hamburger-line"></span>
-            </button>
-            
-            <div class="mobile-nav-menu" id="mobile-nav-menu" role="menu">
-                <div class="mobile-nav-header">
-                    <h2>NPHIES-AI</h2>
-                    <button class="mobile-nav-close" aria-label="Close navigation menu">×</button>
-                </div>
-                <div class="mobile-nav-content">
-                    ${this.createMobileNavItems()}
-                </div>
-            </div>
-            
-            <div class="mobile-nav-overlay"></div>
-        `;
-
-        this.bindMobileNavEvents(mobileNav);
-    }
-
-    createMobileNavContainer() {
-        const container = document.createElement('nav');
-        container.id = 'mobile-navigation';
-        container.className = 'mobile-navigation';
-        container.setAttribute('role', 'navigation');
-        container.setAttribute('aria-label', 'Mobile navigation');
-        
-        document.body.appendChild(container);
-        return container;
-    }
-
-    createMobileNavItems() {
-        const categories = this.groupNavigationByCategory();
-        let html = '';
-
-        Object.entries(categories).forEach(([category, items]) => {
-            html += `
-                <div class="mobile-nav-category">
-                    <h3 class="mobile-nav-category-title">${this.getCategoryTitle(category)}</h3>
-                    <ul class="mobile-nav-list" role="menu">
-                        ${items.map(item => `
-                            <li class="mobile-nav-item" role="menuitem">
-                                <a href="${item.path}" 
-                                   data-route="${item.path}"
-                                   class="mobile-nav-link"
-                                   aria-label="${item.title}">
-                                    <i class="icon-${item.icon}" aria-hidden="true"></i>
-                                    <span>${item.title}</span>
-                                </a>
-                            </li>
-                        `).join('')}
-                    </ul>
-                </div>
-            `;
-        });
-
-        return html;
-    }
-
-    bindMobileNavEvents(mobileNav) {
-        const toggle = mobileNav.querySelector('.mobile-nav-toggle');
-        const close = mobileNav.querySelector('.mobile-nav-close');
-        const overlay = mobileNav.querySelector('.mobile-nav-overlay');
-        const menu = mobileNav.querySelector('.mobile-nav-menu');
-
-        const openMenu = () => {
-            menu.classList.add('open');
-            overlay.classList.add('active');
-            toggle.setAttribute('aria-expanded', 'true');
-            document.body.classList.add('mobile-nav-open');
-        };
-
-        const closeMenu = () => {
-            menu.classList.remove('open');
-            overlay.classList.remove('active');
-            toggle.setAttribute('aria-expanded', 'false');
-            document.body.classList.remove('mobile-nav-open');
-        };
-
-        toggle.addEventListener('click', openMenu);
-        close.addEventListener('click', closeMenu);
-        overlay.addEventListener('click', closeMenu);
-
-        // Close on navigation
-        mobileNav.addEventListener('click', (e) => {
-            if (e.target.matches('[data-route]')) {
-                closeMenu();
-            }
-        });
-
-        // Close on escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && menu.classList.contains('open')) {
-                closeMenu();
-            }
-        });
-    }
-
-    setupKeyboardShortcuts() {
-        document.addEventListener('keydown', (e) => {
-            const shortcut = this.getShortcutKey(e);
-            const path = this.shortcuts.get(shortcut);
-            
-            if (path && !this.isInputFocused()) {
-                e.preventDefault();
-                window.navigate(path);
-            }
-        });
-    }
-
-    getShortcutKey(e) {
-        const parts = [];
-        if (e.ctrlKey) parts.push('Ctrl');
-        if (e.altKey) parts.push('Alt');
-        if (e.shiftKey) parts.push('Shift');
-        if (e.metaKey) parts.push('Meta');
-        
-        if (e.key && e.key !== 'Control' && e.key !== 'Alt' && e.key !== 'Shift' && e.key !== 'Meta') {
-            parts.push(e.key.toUpperCase());
-        }
-        
-        return parts.join('+');
-    }
-
-    isInputFocused() {
-        const activeElement = document.activeElement;
-        return activeElement && (
-            activeElement.tagName === 'INPUT' ||
-            activeElement.tagName === 'TEXTAREA' ||
-            activeElement.contentEditable === 'true'
-        );
-    }
-
-    setupAccessibility() {
-        // Add skip links
-        this.createSkipLinks();
-        
-        // Add focus management
-        this.setupFocusManagement();
-        
-        // Add ARIA live regions
-        this.createLiveRegions();
-    }
-
-    createSkipLinks() {
-        const skipLinks = document.createElement('div');
-        skipLinks.className = 'skip-links';
-        skipLinks.innerHTML = `
-            <a href="#main-content" class="skip-link">Skip to main content</a>
-            <a href="#main-navigation" class="skip-link">Skip to navigation</a>
-        `;
-        
-        document.body.insertBefore(skipLinks, document.body.firstChild);
-    }
-
-    setupFocusManagement() {
-        // Focus management for route changes
-        window.addEventListener('routechange', (e) => {
-            const mainContent = document.getElementById('main-content');
-            if (mainContent) {
-                mainContent.focus();
-                mainContent.scrollIntoView();
-            }
-        });
-    }
-
-    createLiveRegions() {
-        const liveRegion = document.createElement('div');
-        liveRegion.id = 'live-region';
-        liveRegion.className = 'sr-only';
-        liveRegion.setAttribute('aria-live', 'polite');
-        liveRegion.setAttribute('aria-atomic', 'true');
-        
-        document.body.appendChild(liveRegion);
-    }
-
-    bindEvents() {
-        // Listen for route changes
-        window.addEventListener('routechange', (e) => {
-            this.currentPath = e.detail.route.path;
-            this.updateActiveNavigation();
-            this.updateBreadcrumbs();
-            this.announceRouteChange(e.detail.route);
-        });
-
-        // Listen for navigation clicks
+    setupEventListeners() {
+        // Intercept all link clicks
         document.addEventListener('click', (e) => {
-            if (e.target.matches('[data-route]')) {
-                this.handleNavigationClick(e);
+            const link = e.target.closest('a');
+            if (!link) return;
+
+            const href = link.getAttribute('href');
+            
+            // Only handle internal routes
+            if (href && href.startsWith('/') && !href.startsWith('//')) {
+                // Check if it's a valid route
+                if (this.routes.has(href)) {
+                    e.preventDefault();
+                    this.navigate(href);
+                }
             }
+        });
+
+        // Handle browser back/forward
+        window.addEventListener('popstate', (e) => {
+            this.handleRoute(window.location.pathname);
         });
     }
 
-    handleNavigationClick(e) {
-        const link = e.target.closest('[data-route]');
-        const path = link.getAttribute('data-route');
-        
-        // Track navigation analytics
-        this.trackNavigation(path, this.currentPath);
-        
-        // Update navigation state immediately for better UX
-        this.preUpdateNavigation(path);
+    async navigate(path) {
+        if (path === this.currentPath) return;
+
+        try {
+            // Update browser history
+            window.history.pushState({ path }, '', path);
+            
+            // Handle the route
+            await this.handleRoute(path);
+            
+        } catch (error) {
+            console.error('Navigation error:', error);
+            this.showError('Navigation failed');
+        }
     }
 
-    preUpdateNavigation(path) {
-        // Remove active states
-        document.querySelectorAll('.nav-item.active, .nav-link.active').forEach(el => {
-            el.classList.remove('active');
-        });
-        
-        // Add active state to new item
-        const newActiveItem = document.querySelector(`[data-route="${path}"]`);
-        if (newActiveItem) {
-            newActiveItem.classList.add('active');
-            const navItem = newActiveItem.closest('.nav-item');
-            if (navItem) {
-                navItem.classList.add('active');
+    async handleRoute(path) {
+        const route = this.routes.get(path);
+        if (!route) {
+            this.handle404(path);
+            return;
+        }
+
+        try {
+            // Show loading
+            this.showLoading();
+
+            // Update current path
+            this.currentPath = path;
+
+            // Update page title
+            document.title = `${route.title} - NPHIES-AI Healthcare Platform`;
+
+            // Load page content
+            await this.loadPage(path);
+
+            // Update navigation state
+            this.updateNavigationState(path);
+
+            // Hide loading
+            this.hideLoading();
+
+        } catch (error) {
+            this.hideLoading();
+            throw error;
+        }
+    }
+
+    async loadPage(path) {
+        try {
+            // Map paths to actual files
+            const pageMap = {
+                '/': 'index.html',
+                '/dashboard': 'dashboard.html',
+                '/nphies': 'nphies.html',
+                '/claims': 'claims.html',
+                '/eligibility': 'eligibility.html',
+                '/pre-authorization': 'pre-authorization.html',
+                '/ai-assistant': 'ai-assistant.html',
+                '/health-services': 'health-services.html',
+                '/profile': 'profile.html',
+                '/settings': 'settings.html',
+                '/notifications': 'notifications.html',
+                '/login': 'login.html'
+            };
+
+            const fileName = pageMap[path] || 'index.html';
+            
+            // For home page, don't reload if already there
+            if (path === '/' && document.querySelector('.hero-section')) {
+                return;
             }
-        }
-    }
 
-    updateActiveNavigation() {
-        // Remove all active states
-        document.querySelectorAll('.nav-item.active, .nav-link.active').forEach(el => {
-            el.classList.remove('active');
-        });
-        
-        // Add active state to current item
-        const activeLink = document.querySelector(`[data-route="${this.currentPath}"]`);
-        if (activeLink) {
-            activeLink.classList.add('active');
-            const navItem = activeLink.closest('.nav-item');
-            if (navItem) {
-                navItem.classList.add('active');
+            // Fetch page content
+            const response = await fetch(`/static/${fileName}`);
+            if (!response.ok) {
+                throw new Error(`Failed to load ${fileName}`);
             }
+
+            const html = await response.text();
+            
+            // Parse HTML
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Extract body content
+            const newContent = doc.body.innerHTML;
+            
+            // Update page content with smooth transition
+            await this.updatePageContent(newContent);
+            
+            // Initialize page-specific features
+            this.initializePage(path);
+
+        } catch (error) {
+            console.error('Failed to load page:', error);
+            this.showError('Failed to load page content');
         }
     }
 
-    announceRouteChange(route) {
-        const liveRegion = document.getElementById('live-region');
-        if (liveRegion) {
-            liveRegion.textContent = `Navigated to ${route.title}`;
+    async updatePageContent(newContent) {
+        const body = document.body;
+        
+        // Add fade out effect
+        body.style.opacity = '0.7';
+        body.style.transition = 'opacity 0.2s ease';
+        
+        // Wait for fade out
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // Update content
+        body.innerHTML = newContent;
+        
+        // Fade back in
+        body.style.opacity = '1';
+        
+        // Remove transition after animation
+        setTimeout(() => {
+            body.style.transition = '';
+        }, 200);
+    }
+
+    initializePage(path) {
+        // Initialize common features
+        this.initializeCommonFeatures();
+        
+        // Page-specific initialization
+        switch (path) {
+            case '/dashboard':
+                this.initializeDashboard();
+                break;
+            case '/ai-assistant':
+                this.initializeAIAssistant();
+                break;
+            case '/claims':
+                this.initializeClaims();
+                break;
         }
     }
 
-    trackNavigation(to, from) {
-        // Send navigation analytics
-        if (window.gtag) {
-            window.gtag('event', 'page_view', {
-                page_path: to,
-                page_title: this.getPageTitle(to)
+    initializeCommonFeatures() {
+        // Re-initialize tooltips, modals, etc.
+        this.initializeTooltips();
+        this.initializeModals();
+        
+        // Reinitialize navigation event listeners for new content
+        setTimeout(() => {
+            this.setupEventListeners();
+        }, 100);
+    }
+
+    initializeDashboard() {
+        // Load dashboard data
+        this.loadDashboardData();
+    }
+
+    initializeAIAssistant() {
+        // Initialize AI chat features
+        this.setupAIChat();
+    }
+
+    initializeClaims() {
+        // Initialize claims processing features
+        this.setupClaimsForm();
+    }
+
+    async loadDashboardData() {
+        try {
+            const response = await fetch('/health');
+            if (response.ok) {
+                const data = await response.json();
+                this.updateDashboardMetrics(data);
+            }
+        } catch (error) {
+            console.warn('Failed to load dashboard data:', error);
+        }
+    }
+
+    updateDashboardMetrics(data) {
+        // Update dashboard with real data
+        const statusElement = document.getElementById('system-status');
+        if (statusElement) {
+            statusElement.textContent = data.status || 'Unknown';
+            statusElement.className = `status ${data.status || 'unknown'}`;
+        }
+    }
+
+    setupAIChat() {
+        const chatForm = document.getElementById('chat-form');
+        if (chatForm) {
+            chatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleChatMessage(chatForm);
             });
         }
+    }
+
+    async handleChatMessage(form) {
+        const messageInput = form.querySelector('input[name="message"]');
+        const message = messageInput.value.trim();
         
-        console.log(`Navigation tracked: ${from} → ${to}`);
-    }
-
-    getPageTitle(path) {
-        const item = Array.from(this.navigationItems.values()).find(item => item.path === path);
-        return item ? item.title : this.pathToTitle(path);
-    }
-
-    // Utility methods
-    toggleNotifications() {
-        const notificationsPanel = document.getElementById('notifications-panel');
-        if (notificationsPanel) {
-            notificationsPanel.classList.toggle('open');
-        } else {
-            // Navigate to notifications page if panel doesn't exist
-            window.navigate('/notifications');
+        if (!message) return;
+        
+        try {
+            // Add user message to chat
+            this.addChatMessage(message, 'user');
+            
+            // Clear input
+            messageInput.value = '';
+            
+            // Send to AI
+            const response = await fetch('/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                this.addChatMessage(data.response, 'ai');
+            } else {
+                this.addChatMessage('Sorry, I encountered an error. Please try again.', 'ai');
+            }
+            
+        } catch (error) {
+            console.error('Chat error:', error);
+            this.addChatMessage('Connection error. Please check your internet connection.', 'ai');
         }
+    }
+
+    addChatMessage(message, sender) {
+        const chatContainer = document.getElementById('chat-messages');
+        if (!chatContainer) return;
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${sender}`;
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                <p>${message}</p>
+                <span class="message-time">${new Date().toLocaleTimeString()}</span>
+            </div>
+        `;
+        
+        chatContainer.appendChild(messageDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    setupClaimsForm() {
+        const claimsForm = document.getElementById('claims-form');
+        if (claimsForm) {
+            claimsForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleClaimsSubmission(claimsForm);
+            });
+        }
+    }
+
+    async handleClaimsSubmission(form) {
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        
+        try {
+            this.showLoading();
+            
+            const response = await fetch('/claims/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                this.showSuccess('Claim submitted successfully!');
+                form.reset();
+            } else {
+                this.showError('Failed to submit claim. Please try again.');
+            }
+            
+        } catch (error) {
+            console.error('Claims submission error:', error);
+            this.showError('Network error. Please check your connection.');
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    updateNavigationState(currentPath) {
+        // Update active navigation items
+        document.querySelectorAll('a[href]').forEach(link => {
+            const href = link.getAttribute('href');
+            if (href === currentPath) {
+                link.classList.add('active');
+                link.parentElement?.classList.add('active');
+            } else {
+                link.classList.remove('active');
+                link.parentElement?.classList.remove('active');
+            }
+        });
+    }
+
+    handleInitialLoad() {
+        // Handle the current page on initial load
+        this.handleRoute(this.currentPath);
+    }
+
+    handle404(path) {
+        document.title = '404 - Page Not Found - NPHIES-AI Healthcare Platform';
+        
+        document.body.innerHTML = `
+            <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4">
+                <div class="text-center">
+                    <div class="mb-8">
+                        <h1 class="text-6xl font-bold text-white mb-4">404</h1>
+                        <h2 class="text-2xl font-semibold text-gray-300 mb-4">Page Not Found</h2>
+                        <p class="text-gray-400 mb-8">The page "${path}" could not be found.</p>
+                    </div>
+                    <div class="space-x-4">
+                        <button onclick="window.navigation.navigate('/dashboard')" 
+                                class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Go to Dashboard
+                        </button>
+                        <button onclick="history.back()" 
+                                class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                            Go Back
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    showLoading() {
+        // Create or show loading overlay
+        let loader = document.getElementById('page-loader');
+        if (!loader) {
+            loader = document.createElement('div');
+            loader.id = 'page-loader';
+            loader.innerHTML = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
+                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        <span class="text-gray-700">Loading...</span>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(loader);
+        }
+        loader.style.display = 'block';
+    }
+
+    hideLoading() {
+        const loader = document.getElementById('page-loader');
+        if (loader) {
+            loader.style.display = 'none';
+        }
+    }
+
+    showError(message) {
+        this.showNotification(message, 'error');
+    }
+
+    showSuccess(message) {
+        this.showNotification(message, 'success');
+    }
+
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg text-white max-w-sm ${
+            type === 'error' ? 'bg-red-600' : 
+            type === 'success' ? 'bg-green-600' : 
+            'bg-blue-600'
+        }`;
+        notification.innerHTML = `
+            <div class="flex items-center justify-between">
+                <span>${message}</span>
+                <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                    ×
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 5000);
+    }
+
+    initializeTooltips() {
+        document.querySelectorAll('[title]').forEach(element => {
+            element.addEventListener('mouseenter', (e) => {
+                const tooltip = document.createElement('div');
+                tooltip.className = 'absolute bg-black text-white px-2 py-1 rounded text-sm z-50';
+                tooltip.textContent = e.target.getAttribute('title');
+                document.body.appendChild(tooltip);
+                
+                const rect = e.target.getBoundingClientRect();
+                tooltip.style.left = rect.left + 'px';
+                tooltip.style.top = (rect.top - tooltip.offsetHeight - 5) + 'px';
+                
+                e.target._tooltip = tooltip;
+                e.target.removeAttribute('title'); // Prevent default tooltip
+            });
+            
+            element.addEventListener('mouseleave', (e) => {
+                if (e.target._tooltip) {
+                    document.body.removeChild(e.target._tooltip);
+                    delete e.target._tooltip;
+                }
+            });
+        });
+    }
+
+    initializeModals() {
+        document.querySelectorAll('[data-modal]').forEach(trigger => {
+            trigger.addEventListener('click', (e) => {
+                e.preventDefault();
+                const modalId = e.target.getAttribute('data-modal');
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.style.display = 'flex';
+                }
+            });
+        });
+
+        document.querySelectorAll('.modal-close, .modal-backdrop').forEach(closeElement => {
+            closeElement.addEventListener('click', (e) => {
+                const modal = e.target.closest('.modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
     }
 
     // Public API
@@ -641,32 +505,17 @@ class NavigationManager {
         return this.currentPath;
     }
 
-    getNavigationItems() {
-        return Array.from(this.navigationItems.values());
-    }
-
-    addNavigationItem(item) {
-        this.navigationItems.set(item.id, item);
-        this.createMainNavigation(); // Refresh navigation
-    }
-
-    removeNavigationItem(id) {
-        this.navigationItems.delete(id);
-        this.createMainNavigation(); // Refresh navigation
-    }
-
-    updateNavigationItem(id, updates) {
-        const item = this.navigationItems.get(id);
-        if (item) {
-            Object.assign(item, updates);
-            this.createMainNavigation(); // Refresh navigation
-        }
+    refresh() {
+        this.handleRoute(this.currentPath);
     }
 }
 
 // Initialize navigation when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    window.navigationManager = new NavigationManager();
+    window.navigation = new NavigationManager();
+    
+    // Expose navigation methods globally
+    window.navigate = (path) => window.navigation.navigate(path);
 });
 
 // Export for module systems

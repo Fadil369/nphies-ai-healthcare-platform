@@ -54,12 +54,27 @@ class EnhancedRouter {
             this.handleRoute(window.location.pathname, false);
         });
 
-        // Handle navigation clicks
+        // Handle navigation clicks - support both data-route and href
         document.addEventListener('click', (e) => {
-            if (e.target.matches('[data-route]')) {
+            const target = e.target.closest('a');
+            if (!target) return;
+
+            // Check for data-route attribute first
+            if (target.hasAttribute('data-route')) {
                 e.preventDefault();
-                const path = e.target.getAttribute('data-route');
+                const path = target.getAttribute('data-route');
                 this.navigate(path);
+                return;
+            }
+
+            // Handle regular href links for internal routes
+            const href = target.getAttribute('href');
+            if (href && href.startsWith('/') && !href.startsWith('//')) {
+                // Check if this is a route we handle
+                if (this.routes.has(href)) {
+                    e.preventDefault();
+                    this.navigate(href);
+                }
             }
         });
 

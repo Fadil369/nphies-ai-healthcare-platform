@@ -3,259 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Assistant - BrainSAIT NPHIES</title>
+    <title>AI Assistant - NPHIES-AI Healthcare Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
-        .chat-container { background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); height: 600px; display: flex; flex-direction: column; }
-        .chat-header { padding: 20px; border-bottom: 1px solid #eee; background: #f8f9fa; border-radius: 10px 10px 0 0; }
-        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; }
-        .message { margin-bottom: 15px; display: flex; align-items: flex-start; }
-        .message.user { justify-content: flex-end; }
-        .message-content { max-width: 70%; padding: 12px 16px; border-radius: 18px; }
-        .message.user .message-content { background: #667eea; color: white; }
-        .message.ai .message-content { background: #f1f3f4; color: #333; }
-        .chat-input { padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; }
-        .chat-input input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; outline: none; }
-        .chat-input button { padding: 12px 24px; background: #667eea; color: white; border: none; border-radius: 25px; cursor: pointer; }
-        .typing-indicator { display: none; padding: 10px; color: #666; font-style: italic; }
-        .status-bar { padding: 10px 20px; background: #e8f5e8; color: #2d5a2d; font-size: 14px; border-radius: 0 0 10px 10px; }
-        .ai-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px; }
-        .feature-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .feature-card h3 { color: #667eea; margin-bottom: 10px; }
-        .quick-actions { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .quick-action { padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 20px; cursor: pointer; font-size: 14px; }
-        .quick-action:hover { background: #5a6fd8; }
+        body { font-family: 'Inter', sans-serif; }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .chat-message.user { justify-content: flex-end; }
+        .chat-message.ai { justify-content: flex-start; }
+        .message-content { max-width: 70%; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🤖 AI Healthcare Assistant</h1>
-            <p>Real-time AI support for NPHIES, claims, eligibility, and healthcare queries</p>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white min-h-screen">
+    <!-- Navigation -->
+    <nav class="glass-effect border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="text-xl font-bold">🏥 NPHIES-AI</div>
+                    <div class="hidden md:flex space-x-6">
+                        <a href="/" class="text-gray-300 hover:text-white transition-colors">Home</a>
+                        <a href="/dashboard" class="text-gray-300 hover:text-white transition-colors">Dashboard</a>
+                        <a href="/nphies" class="text-gray-300 hover:text-white transition-colors">NPHIES</a>
+                        <a href="/claims" class="text-gray-300 hover:text-white transition-colors">Claims</a>
+                        <a href="/ai-assistant" class="text-blue-400 font-medium">AI Assistant</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/profile" class="text-gray-300 hover:text-white transition-colors">Profile</a>
+                    <a href="/settings" class="text-gray-300 hover:text-white transition-colors">Settings</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-screen flex flex-col">
+        <!-- Header -->
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold mb-2">AI Healthcare Assistant</h1>
+            <p class="text-gray-400">Get intelligent insights and support for your healthcare operations</p>
         </div>
 
-        <div class="ai-features">
-            <div class="feature-card">
-                <h3>🏥 Healthcare Expertise</h3>
-                <p>Specialized knowledge in NPHIES integration, insurance claims, and healthcare workflows</p>
-            </div>
-            <div class="feature-card">
-                <h3>⚡ Real-time Streaming</h3>
-                <p>Instant responses with live typing indicators and progressive answer delivery</p>
-            </div>
-            <div class="feature-card">
-                <h3>🔍 Smart Analysis</h3>
-                <p>AI-powered analysis of claims, eligibility checks, and pre-authorization requests</p>
-            </div>
-        </div>
-
-        <div class="quick-actions">
-            <button class="quick-action" onclick="sendQuickMessage('Check my eligibility status')">Check Eligibility</button>
-            <button class="quick-action" onclick="sendQuickMessage('Help with claim submission')">Submit Claim</button>
-            <button class="quick-action" onclick="sendQuickMessage('Pre-authorization requirements')">Pre-Authorization</button>
-            <button class="quick-action" onclick="sendQuickMessage('NPHIES system status')">NPHIES Status</button>
-        </div>
-
-        <div class="chat-container">
-            <div class="chat-header">
-                <h3>💬 Chat with AI Assistant</h3>
-                <p>Ask me anything about healthcare, insurance, or NPHIES integration</p>
-            </div>
-            
-            <div class="chat-messages" id="chatMessages">
-                <div class="message ai">
-                    <div class="message-content">
-                        👋 Hello! I'm your AI healthcare assistant. I can help you with:
-                        <br>• Insurance eligibility checks
-                        <br>• Claims processing and status
-                        <br>• Pre-authorization requirements
-                        <br>• NPHIES integration support
-                        <br><br>How can I assist you today?
+        <!-- Chat Container -->
+        <div class="glass-effect rounded-xl flex-1 flex flex-col">
+            <!-- Chat Messages -->
+            <div id="chat-messages" class="flex-1 p-6 overflow-y-auto space-y-4">
+                <div class="chat-message ai flex">
+                    <div class="message-content bg-blue-600 rounded-lg p-4">
+                        <p>Hello! I'm your AI healthcare assistant. I can help you with:</p>
+                        <ul class="mt-2 list-disc list-inside text-sm">
+                            <li>Claims processing guidance</li>
+                            <li>NPHIES integration support</li>
+                            <li>Medical coding assistance</li>
+                            <li>Eligibility verification</li>
+                            <li>Healthcare analytics insights</li>
+                        </ul>
+                        <span class="text-xs text-blue-200 block mt-2">Just now</span>
                     </div>
                 </div>
             </div>
-            
-            <div class="typing-indicator" id="typingIndicator">
-                🤖 AI is thinking...
-            </div>
-            
-            <div class="chat-input">
-                <input type="text" id="messageInput" placeholder="Type your healthcare question..." onkeypress="handleKeyPress(event)">
-                <button onclick="sendMessage()">Send</button>
-            </div>
-            
-            <div class="status-bar">
-                ✅ AI Assistant Active | Real-time Streaming Enabled | Healthcare Context Loaded
+
+            <!-- Chat Input -->
+            <div class="border-t border-white/10 p-6">
+                <form id="chat-form" class="flex space-x-4">
+                    <input 
+                        type="text" 
+                        name="message" 
+                        placeholder="Ask me anything about healthcare operations..." 
+                        class="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        autocomplete="off"
+                    >
+                    <button 
+                        type="submit" 
+                        class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors font-medium"
+                    >
+                        Send
+                    </button>
+                </form>
             </div>
         </div>
-    </div>
 
+        <!-- Quick Actions -->
+        <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <button class="glass-effect p-4 rounded-lg text-center hover:bg-white/10 transition-colors" onclick="sendQuickMessage('How do I submit a claim?')">
+                <div class="text-2xl mb-2">📋</div>
+                <div class="text-sm">Submit Claim</div>
+            </button>
+            <button class="glass-effect p-4 rounded-lg text-center hover:bg-white/10 transition-colors" onclick="sendQuickMessage('Check eligibility status')">
+                <div class="text-2xl mb-2">✅</div>
+                <div class="text-sm">Check Eligibility</div>
+            </button>
+            <button class="glass-effect p-4 rounded-lg text-center hover:bg-white/10 transition-colors" onclick="sendQuickMessage('Explain medical codes')">
+                <div class="text-2xl mb-2">🔍</div>
+                <div class="text-sm">Medical Codes</div>
+            </button>
+            <button class="glass-effect p-4 rounded-lg text-center hover:bg-white/10 transition-colors" onclick="sendQuickMessage('Show system status')">
+                <div class="text-2xl mb-2">📊</div>
+                <div class="text-sm">System Status</div>
+            </button>
+        </div>
+
+        <!-- Navigation Links -->
+        <div class="mt-6 flex justify-center space-x-4">
+            <a href="/dashboard" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors text-sm">← Dashboard</a>
+            <a href="/claims" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors text-sm">Process Claims</a>
+            <a href="/health-services" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-sm">Health Services</a>
+        </div>
+    </main>
+
+    <!-- Enhanced Navigation System -->
+    <script src="/static/js/navigation.js"></script>
+    
     <script>
-        let isTyping = false;
-        let currentSessionId = null;
-
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !isTyping) {
-                sendMessage();
-            }
-        }
-
+        // Quick message function
         function sendQuickMessage(message) {
-            document.getElementById('messageInput').value = message;
-            sendMessage();
+            const messageInput = document.querySelector('input[name="message"]');
+            messageInput.value = message;
+            document.getElementById('chat-form').dispatchEvent(new Event('submit'));
         }
-
-        function addMessage(content, isUser = false) {
-            const messagesContainer = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
+        
+        // Demo responses for testing
+        const demoResponses = {
+            'How do I submit a claim?': 'To submit a claim, go to the Claims section and fill out the required fields: Patient ID, Procedure Code, Amount, and Provider ID. The system will validate the information and submit it to NPHIES automatically.',
+            'Check eligibility status': 'I can help you check patient eligibility. Please provide the patient ID and insurance details, and I\'ll verify their coverage status with the NPHIES system.',
+            'Explain medical codes': 'Medical codes are standardized identifiers for procedures, diagnoses, and services. Common types include CPT codes for procedures, ICD-10 codes for diagnoses, and HCPCS codes for supplies and services.',
+            'Show system status': 'Current system status: All services are operational. API response time: 120ms. Database connectivity: Good. AI services: Active. Last updated: Just now.'
+        };
+        
+        // Add demo response for testing
+        document.getElementById('chat-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const messageInput = e.target.querySelector('input[name="message"]');
+            const message = messageInput.value.trim();
             
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content';
-            contentDiv.innerHTML = content;
-            
-            messageDiv.appendChild(contentDiv);
-            messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function showTypingIndicator() {
-            document.getElementById('typingIndicator').style.display = 'block';
-            isTyping = true;
-        }
-
-        function hideTypingIndicator() {
-            document.getElementById('typingIndicator').style.display = 'none';
-            isTyping = false;
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-            
-            if (!message || isTyping) return;
+            if (!message) return;
             
             // Add user message
-            addMessage(message, true);
-            input.value = '';
+            addChatMessage(message, 'user');
+            messageInput.value = '';
             
-            // Show typing indicator
-            showTypingIndicator();
-            
-            try {
-                // Send to streaming endpoint
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        message: message,
-                        language: 'en',
-                        session_id: currentSessionId,
-                        context: 'healthcare'
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let aiMessageDiv = null;
-                let aiContentDiv = null;
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split('\n');
-
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            try {
-                                const data = JSON.parse(line.slice(6));
-                                
-                                if (data.type === 'session_start') {
-                                    currentSessionId = data.session_id;
-                                }
-                                else if (data.type === 'thinking') {
-                                    // Keep typing indicator
-                                }
-                                else if (data.type === 'partial_response') {
-                                    hideTypingIndicator();
-                                    
-                                    if (!aiMessageDiv) {
-                                        const messagesContainer = document.getElementById('chatMessages');
-                                        aiMessageDiv = document.createElement('div');
-                                        aiMessageDiv.className = 'message ai';
-                                        aiContentDiv = document.createElement('div');
-                                        aiContentDiv.className = 'message-content';
-                                        aiMessageDiv.appendChild(aiContentDiv);
-                                        messagesContainer.appendChild(aiMessageDiv);
-                                    }
-                                    
-                                    aiContentDiv.innerHTML = data.text;
-                                    document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
-                                }
-                                else if (data.type === 'final_response') {
-                                    hideTypingIndicator();
-                                    
-                                    if (!aiMessageDiv) {
-                                        addMessage(data.message);
-                                    } else {
-                                        aiContentDiv.innerHTML = data.message;
-                                    }
-                                }
-                            } catch (e) {
-                                console.error('Error parsing SSE data:', e);
-                            }
-                        }
-                    }
-                }
-            } catch (error) {
-                hideTypingIndicator();
-                addMessage('❌ Sorry, I encountered an error. Please try again.');
-                console.error('Chat error:', error);
-            }
-        }
-
-        // Initialize WebSocket for real-time features (optional)
-        function initWebSocket() {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws/chat`;
-            
-            try {
-                const ws = new WebSocket(wsUrl);
-                
-                ws.onopen = function() {
-                    console.log('WebSocket connected for real-time features');
-                };
-                
-                ws.onmessage = function(event) {
-                    const data = JSON.parse(event.data);
-                    if (data.type === 'ai_response') {
-                        addMessage(data.message);
-                    }
-                };
-                
-                ws.onerror = function(error) {
-                    console.log('WebSocket error:', error);
-                };
-            } catch (error) {
-                console.log('WebSocket not available, using HTTP streaming');
-            }
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            initWebSocket();
+            // Add AI response (demo)
+            setTimeout(() => {
+                const response = demoResponses[message] || 'I understand your question. In a production environment, I would provide detailed healthcare guidance and connect to real AI services for comprehensive assistance.';
+                addChatMessage(response, 'ai');
+            }, 1000);
         });
+        
+        function addChatMessage(message, sender) {
+            const chatContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender} flex`;
+            
+            const bgColor = sender === 'user' ? 'bg-gray-600' : 'bg-blue-600';
+            
+            messageDiv.innerHTML = `
+                <div class="message-content ${bgColor} rounded-lg p-4">
+                    <p>${message}</p>
+                    <span class="text-xs opacity-75 block mt-2">${new Date().toLocaleTimeString()}</span>
+                </div>
+            `;
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
     </script>
 </body>
 </html>

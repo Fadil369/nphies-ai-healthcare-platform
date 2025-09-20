@@ -3,463 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings - BrainSAIT NPHIES</title>
+    <title>Settings - NPHIES-AI Healthcare Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
-        .settings-grid { display: grid; grid-template-columns: 250px 1fr; gap: 20px; }
-        .settings-nav { background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 20px; height: fit-content; }
-        .settings-nav ul { list-style: none; }
-        .settings-nav li { margin-bottom: 10px; }
-        .settings-nav a { display: block; padding: 10px 15px; color: #333; text-decoration: none; border-radius: 5px; transition: background 0.3s; }
-        .settings-nav a:hover, .settings-nav a.active { background: #667eea; color: white; }
-        .settings-content { background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 30px; }
-        .settings-section { display: none; }
-        .settings-section.active { display: block; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; }
-        .form-group input[type="checkbox"] { width: auto; margin-right: 10px; }
-        .btn { padding: 12px 24px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-right: 10px; }
-        .btn:hover { background: #5a6fd8; }
-        .btn-secondary { background: #6c757d; }
-        .btn-secondary:hover { background: #5a6268; }
-        .toggle-switch { position: relative; display: inline-block; width: 60px; height: 34px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #667eea; }
-        input:checked + .slider:before { transform: translateX(26px); }
-        .ai-status { display: flex; align-items: center; gap: 10px; padding: 15px; background: #e8f5e8; border-radius: 8px; margin-bottom: 20px; }
-        .status-indicator { width: 12px; height: 12px; border-radius: 50%; background: #28a745; }
-        .config-card { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .config-card h4 { color: #667eea; margin-bottom: 15px; }
+        body { font-family: 'Inter', sans-serif; }
+        .glass-effect { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>⚙️ Settings</h1>
-            <p>Configure your AI assistant, NPHIES integration, and system preferences</p>
-        </div>
-
-        <div class="settings-grid">
-            <div class="settings-nav">
-                <ul>
-                    <li><a href="#" class="nav-link active" data-section="ai-settings">🤖 AI Assistant</a></li>
-                    <li><a href="#" class="nav-link" data-section="nphies-settings">🏥 NPHIES Config</a></li>
-                    <li><a href="#" class="nav-link" data-section="user-settings">👤 User Profile</a></li>
-                    <li><a href="#" class="nav-link" data-section="notification-settings">🔔 Notifications</a></li>
-                    <li><a href="#" class="nav-link" data-section="security-settings">🔒 Security</a></li>
-                    <li><a href="#" class="nav-link" data-section="system-settings">⚡ System</a></li>
-                </ul>
-            </div>
-
-            <div class="settings-content">
-                <!-- AI Settings -->
-                <div id="ai-settings" class="settings-section active">
-                    <h2>🤖 AI Assistant Configuration</h2>
-                    
-                    <div class="ai-status">
-                        <div class="status-indicator"></div>
-                        <span><strong>AI Status:</strong> Active and Learning</span>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white min-h-screen">
+    <nav class="glass-effect border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="text-xl font-bold">🏥 NPHIES-AI</div>
+                    <div class="hidden md:flex space-x-6">
+                        <a href="/" class="text-gray-300 hover:text-white transition-colors">Home</a>
+                        <a href="/dashboard" class="text-gray-300 hover:text-white transition-colors">Dashboard</a>
+                        <a href="/profile" class="text-gray-300 hover:text-white transition-colors">Profile</a>
+                        <a href="/settings" class="text-blue-400 font-medium">Settings</a>
                     </div>
-
-                    <div class="config-card">
-                        <h4>Response Settings</h4>
-                        <div class="form-group">
-                            <label>Response Language</label>
-                            <select id="aiLanguage">
-                                <option value="en">English</option>
-                                <option value="ar">Arabic</option>
-                                <option value="both">Bilingual</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Response Style</label>
-                            <select id="responseStyle">
-                                <option value="professional">Professional</option>
-                                <option value="friendly">Friendly</option>
-                                <option value="detailed">Detailed</option>
-                                <option value="concise">Concise</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="realTimeStreaming" checked>
-                                Enable Real-time Streaming Responses
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="config-card">
-                        <h4>Healthcare Specialization</h4>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="eligibilityExpert" checked>
-                                Eligibility Check Expertise
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="claimsExpert" checked>
-                                Claims Processing Expertise
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="preAuthExpert" checked>
-                                Pre-authorization Expertise
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="nphiesExpert" checked>
-                                NPHIES Integration Expertise
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="config-card">
-                        <h4>AI Learning & Analytics</h4>
-                        <div class="form-group">
-                            <label>Confidence Threshold</label>
-                            <input type="range" id="confidenceThreshold" min="0.5" max="1.0" step="0.05" value="0.85">
-                            <span id="confidenceValue">85%</span>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="learningMode" checked>
-                                Enable Continuous Learning
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="analyticsCollection" checked>
-                                Collect Usage Analytics
-                            </label>
-                        </div>
-                    </div>
-
-                    <button class="btn" onclick="saveAISettings()">💾 Save AI Settings</button>
-                </div>
-
-                <!-- NPHIES Settings -->
-                <div id="nphies-settings" class="settings-section">
-                    <h2>🏥 NPHIES Integration</h2>
-                    
-                    <div class="config-card">
-                        <h4>Connection Settings</h4>
-                        <div class="form-group">
-                            <label>NPHIES Environment</label>
-                            <select id="nphiesEnv">
-                                <option value="sandbox">Sandbox</option>
-                                <option value="production">Production</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Provider ID</label>
-                            <input type="text" id="providerId" placeholder="Enter your provider ID">
-                        </div>
-                        <div class="form-group">
-                            <label>API Endpoint</label>
-                            <input type="url" id="apiEndpoint" placeholder="https://api.nphies.sa">
-                        </div>
-                    </div>
-
-                    <div class="config-card">
-                        <h4>Integration Features</h4>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="autoSync" checked>
-                                Auto-sync with NPHIES
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="realTimeValidation" checked>
-                                Real-time Validation
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>Sync Interval (minutes)</label>
-                            <input type="number" id="syncInterval" value="15" min="5" max="60">
-                        </div>
-                    </div>
-
-                    <button class="btn" onclick="saveNPHIESSettings()">💾 Save NPHIES Settings</button>
-                    <button class="btn btn-secondary" onclick="testConnection()">🔗 Test Connection</button>
-                </div>
-
-                <!-- User Settings -->
-                <div id="user-settings" class="settings-section">
-                    <h2>👤 User Profile</h2>
-                    
-                    <div class="config-card">
-                        <h4>Personal Information</h4>
-                        <div class="form-group">
-                            <label>Full Name</label>
-                            <input type="text" id="fullName" placeholder="Enter your full name">
-                        </div>
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" id="email" placeholder="Enter your email">
-                        </div>
-                        <div class="form-group">
-                            <label>Role</label>
-                            <select id="userRole">
-                                <option value="admin">Administrator</option>
-                                <option value="provider">Healthcare Provider</option>
-                                <option value="staff">Staff Member</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="config-card">
-                        <h4>Preferences</h4>
-                        <div class="form-group">
-                            <label>Time Zone</label>
-                            <select id="timezone">
-                                <option value="Asia/Riyadh">Asia/Riyadh (GMT+3)</option>
-                                <option value="UTC">UTC (GMT+0)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Date Format</label>
-                            <select id="dateFormat">
-                                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <button class="btn" onclick="saveUserSettings()">💾 Save Profile</button>
-                </div>
-
-                <!-- Notification Settings -->
-                <div id="notification-settings" class="settings-section">
-                    <h2>🔔 Notification Preferences</h2>
-                    
-                    <div class="config-card">
-                        <h4>Email Notifications</h4>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="emailClaims" checked>
-                                Claim Status Updates
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="emailSystem" checked>
-                                System Alerts
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="emailAI" checked>
-                                AI Assistant Updates
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="config-card">
-                        <h4>In-App Notifications</h4>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="inAppClaims" checked>
-                                Claim Notifications
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="inAppAI" checked>
-                                AI Suggestions
-                            </label>
-                        </div>
-                    </div>
-
-                    <button class="btn" onclick="saveNotificationSettings()">💾 Save Notifications</button>
-                </div>
-
-                <!-- Security Settings -->
-                <div id="security-settings" class="settings-section">
-                    <h2>🔒 Security Settings</h2>
-                    
-                    <div class="config-card">
-                        <h4>Password & Authentication</h4>
-                        <div class="form-group">
-                            <label>Current Password</label>
-                            <input type="password" id="currentPassword">
-                        </div>
-                        <div class="form-group">
-                            <label>New Password</label>
-                            <input type="password" id="newPassword">
-                        </div>
-                        <div class="form-group">
-                            <label>Confirm New Password</label>
-                            <input type="password" id="confirmPassword">
-                        </div>
-                    </div>
-
-                    <div class="config-card">
-                        <h4>Security Features</h4>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="twoFactor">
-                                Enable Two-Factor Authentication
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>Session Timeout (minutes)</label>
-                            <input type="number" id="sessionTimeout" value="30" min="15" max="120">
-                        </div>
-                    </div>
-
-                    <button class="btn" onclick="saveSecuritySettings()">💾 Save Security</button>
-                </div>
-
-                <!-- System Settings -->
-                <div id="system-settings" class="settings-section">
-                    <h2>⚡ System Configuration</h2>
-                    
-                    <div class="config-card">
-                        <h4>Performance</h4>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="cacheEnabled" checked>
-                                Enable Caching
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="compressionEnabled" checked>
-                                Enable Compression
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="config-card">
-                        <h4>Logging & Monitoring</h4>
-                        <div class="form-group">
-                            <label>Log Level</label>
-                            <select id="logLevel">
-                                <option value="error">Error</option>
-                                <option value="warn">Warning</option>
-                                <option value="info" selected>Info</option>
-                                <option value="debug">Debug</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="performanceMonitoring" checked>
-                                Performance Monitoring
-                            </label>
-                        </div>
-                    </div>
-
-                    <button class="btn" onclick="saveSystemSettings()">💾 Save System</button>
-                    <button class="btn btn-secondary" onclick="clearCache()">🗑️ Clear Cache</button>
                 </div>
             </div>
         </div>
-    </div>
+    </nav>
 
-    <script>
-        // Navigation handling
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // Remove active class from all links and sections
-                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-                document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
-                
-                // Add active class to clicked link and corresponding section
-                this.classList.add('active');
-                document.getElementById(this.dataset.section).classList.add('active');
-            });
-        });
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold mb-2">Settings</h1>
+            <p class="text-gray-400">Configure your platform preferences and integrations</p>
+        </div>
 
-        // Confidence threshold slider
-        document.getElementById('confidenceThreshold').addEventListener('input', function() {
-            document.getElementById('confidenceValue').textContent = Math.round(this.value * 100) + '%';
-        });
+        <div class="space-y-6">
+            <div class="glass-effect rounded-xl p-6">
+                <h2 class="text-xl font-semibold mb-6">NPHIES Configuration</h2>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-medium">Auto-sync Claims</h3>
+                            <p class="text-sm text-gray-400">Automatically sync claims with NPHIES</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-medium">Real-time Eligibility</h3>
+                            <p class="text-sm text-gray-400">Check eligibility in real-time</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
 
-        // Save functions
-        function saveAISettings() {
-            const settings = {
-                language: document.getElementById('aiLanguage').value,
-                responseStyle: document.getElementById('responseStyle').value,
-                realTimeStreaming: document.getElementById('realTimeStreaming').checked,
-                eligibilityExpert: document.getElementById('eligibilityExpert').checked,
-                claimsExpert: document.getElementById('claimsExpert').checked,
-                preAuthExpert: document.getElementById('preAuthExpert').checked,
-                nphiesExpert: document.getElementById('nphiesExpert').checked,
-                confidenceThreshold: document.getElementById('confidenceThreshold').value,
-                learningMode: document.getElementById('learningMode').checked,
-                analyticsCollection: document.getElementById('analyticsCollection').checked
-            };
-            
-            localStorage.setItem('aiSettings', JSON.stringify(settings));
-            alert('AI settings saved successfully!');
-        }
+            <div class="glass-effect rounded-xl p-6">
+                <h2 class="text-xl font-semibold mb-6">AI Assistant Settings</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Response Language</label>
+                        <select class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option>English</option>
+                            <option>Arabic</option>
+                            <option>Both</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-medium">Medical Terminology</h3>
+                            <p class="text-sm text-gray-400">Use medical terminology in responses</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
 
-        function saveNPHIESSettings() {
-            const settings = {
-                environment: document.getElementById('nphiesEnv').value,
-                providerId: document.getElementById('providerId').value,
-                apiEndpoint: document.getElementById('apiEndpoint').value,
-                autoSync: document.getElementById('autoSync').checked,
-                realTimeValidation: document.getElementById('realTimeValidation').checked,
-                syncInterval: document.getElementById('syncInterval').value
-            };
-            
-            localStorage.setItem('nphiesSettings', JSON.stringify(settings));
-            alert('NPHIES settings saved successfully!');
-        }
+            <div class="glass-effect rounded-xl p-6">
+                <h2 class="text-xl font-semibold mb-6">Notifications</h2>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-medium">Email Notifications</h3>
+                            <p class="text-sm text-gray-400">Receive updates via email</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-medium">SMS Alerts</h3>
+                            <p class="text-sm text-gray-400">Urgent notifications via SMS</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
 
-        function saveUserSettings() {
-            alert('User settings saved successfully!');
-        }
+            <div class="glass-effect rounded-xl p-6">
+                <h2 class="text-xl font-semibold mb-6">Security</h2>
+                <div class="space-y-4">
+                    <button class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-left">
+                        Change Password
+                    </button>
+                    <button class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors text-left">
+                        Enable Two-Factor Authentication
+                    </button>
+                    <button class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-left">
+                        Download Activity Log
+                    </button>
+                </div>
+            </div>
 
-        function saveNotificationSettings() {
-            alert('Notification settings saved successfully!');
-        }
+            <div class="flex justify-center space-x-4">
+                <button class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+                    Save Settings
+                </button>
+                <a href="/dashboard" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors">
+                    Cancel
+                </a>
+            </div>
+        </div>
+    </main>
 
-        function saveSecuritySettings() {
-            alert('Security settings saved successfully!');
-        }
-
-        function saveSystemSettings() {
-            alert('System settings saved successfully!');
-        }
-
-        function testConnection() {
-            alert('Testing NPHIES connection... Connection successful!');
-        }
-
-        function clearCache() {
-            if (confirm('Are you sure you want to clear the cache?')) {
-                alert('Cache cleared successfully!');
-            }
-        }
-
-        // Load saved settings on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const aiSettings = localStorage.getItem('aiSettings');
-            if (aiSettings) {
-                const settings = JSON.parse(aiSettings);
-                // Load AI settings into form
-                if (settings.language) document.getElementById('aiLanguage').value = settings.language;
-                if (settings.responseStyle) document.getElementById('responseStyle').value = settings.responseStyle;
-                // ... load other settings
-            }
-        });
-    </script>
+    <script src="/static/js/navigation.js"></script>
 </body>
 </html>

@@ -3,327 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏥 NPHIES-AI Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Dashboard - NPHIES-AI Healthcare Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        'sans': ['Inter', 'system-ui', 'sans-serif'],
-                        'mono': ['JetBrains Mono', 'monospace'],
-                    }
-                }
-            }
-        }
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { 
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-            min-height: 100vh;
-        }
-        .glass-card { 
-            background: rgba(255,255,255,0.05); 
+        body { font-family: 'Inter', sans-serif; }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .metric-value { font-size: 2.5rem; font-weight: 800; }
-        .chart-container { height: 350px; }
-        .glow-effect { box-shadow: 0 0 30px rgba(14, 165, 233, 0.2); }
-        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
     </style>
 </head>
-<body class="text-white">
-    <div class="min-h-screen p-6">
-        <!-- Header -->
-        <div class="glass-card rounded-2xl p-8 mb-8 glow-effect">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-6">
-                    <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center glow-effect">
-                        <span class="text-2xl">🏥</span>
-                    </div>
-                    <div>
-                        <h1 class="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                            NPHIES-AI Dashboard
-                        </h1>
-                        <p class="text-blue-300 font-mono text-sm">Advanced Healthcare Intelligence Platform v3.0</p>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white min-h-screen">
+    <!-- Navigation -->
+    <nav class="glass-effect border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="text-xl font-bold">🏥 NPHIES-AI</div>
+                    <div class="hidden md:flex space-x-6">
+                        <a href="/" class="text-gray-300 hover:text-white transition-colors">Home</a>
+                        <a href="/dashboard" class="text-blue-400 font-medium">Dashboard</a>
+                        <a href="/nphies" class="text-gray-300 hover:text-white transition-colors">NPHIES</a>
+                        <a href="/claims" class="text-gray-300 hover:text-white transition-colors">Claims</a>
+                        <a href="/ai-assistant" class="text-gray-300 hover:text-white transition-colors">AI Assistant</a>
                     </div>
                 </div>
-                <div class="text-right">
-                    <div class="text-sm text-gray-400 font-mono">System Status</div>
-                    <div class="flex items-center space-x-3 mt-1">
-                        <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse-slow"></div>
-                        <span class="font-semibold text-green-400">Operational</span>
-                        <span class="text-xs text-gray-500 font-mono" id="currentTime"></span>
+                <div class="flex items-center space-x-4">
+                    <a href="/profile" class="text-gray-300 hover:text-white transition-colors">Profile</a>
+                    <a href="/settings" class="text-gray-300 hover:text-white transition-colors">Settings</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold mb-2">Healthcare Dashboard</h1>
+            <p class="text-gray-400">Monitor your healthcare operations and AI insights</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="glass-effect rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Total Claims</p>
+                        <p class="text-2xl font-bold">1,234</p>
                     </div>
+                    <div class="text-blue-400 text-2xl">📊</div>
+                </div>
+            </div>
+            
+            <div class="glass-effect rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">System Status</p>
+                        <p class="text-2xl font-bold text-green-400" id="system-status">Healthy</p>
+                    </div>
+                    <div class="text-green-400 text-2xl">✅</div>
+                </div>
+            </div>
+            
+            <div class="glass-effect rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">AI Insights</p>
+                        <p class="text-2xl font-bold">89%</p>
+                    </div>
+                    <div class="text-purple-400 text-2xl">🤖</div>
+                </div>
+            </div>
+            
+            <div class="glass-effect rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Active Users</p>
+                        <p class="text-2xl font-bold">456</p>
+                    </div>
+                    <div class="text-yellow-400 text-2xl">👥</div>
                 </div>
             </div>
         </div>
 
         <!-- Quick Actions -->
-        <div class="glass-card rounded-2xl p-8 mb-8">
-            <h2 class="text-2xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                Quick Actions
-            </h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <button onclick="window.location.href='/eligibility'" class="group p-4 bg-gradient-to-r from-blue-500/20 to-blue-600/20 hover:from-blue-500/30 hover:to-blue-600/30 rounded-xl border border-blue-500/30 transition-all hover:scale-105">
-                    <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">🎯</div>
-                    <div class="font-semibold text-blue-300">Eligibility</div>
-                    <div class="text-xs text-gray-400">Verify Coverage</div>
-                </button>
-                <button onclick="window.location.href='/claims'" class="group p-4 bg-gradient-to-r from-green-500/20 to-green-600/20 hover:from-green-500/30 hover:to-green-600/30 rounded-xl border border-green-500/30 transition-all hover:scale-105">
-                    <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">📋</div>
-                    <div class="font-semibold text-green-300">Claims</div>
-                    <div class="text-xs text-gray-400">Process Claims</div>
-                </button>
-                <button onclick="window.location.href='/pre-authorization'" class="group p-4 bg-gradient-to-r from-purple-500/20 to-purple-600/20 hover:from-purple-500/30 hover:to-purple-600/30 rounded-xl border border-purple-500/30 transition-all hover:scale-105">
-                    <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">✅</div>
-                    <div class="font-semibold text-purple-300">Pre-Auth</div>
-                    <div class="text-xs text-gray-400">Authorization</div>
-                </button>
-                <button onclick="window.location.href='/ai-assistant'" class="group p-4 bg-gradient-to-r from-orange-500/20 to-orange-600/20 hover:from-orange-500/30 hover:to-orange-600/30 rounded-xl border border-orange-500/30 transition-all hover:scale-105">
-                    <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">🤖</div>
-                    <div class="font-semibold text-orange-300">AI Assistant</div>
-                    <div class="text-xs text-gray-400">Smart Help</div>
-                </button>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="glass-effect rounded-xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
+                <div class="space-y-3">
+                    <a href="/claims" class="block w-full text-left px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+                        Submit New Claim
+                    </a>
+                    <a href="/eligibility" class="block w-full text-left px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
+                        Check Eligibility
+                    </a>
+                    <a href="/pre-authorization" class="block w-full text-left px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors">
+                        Request Pre-Auth
+                    </a>
+                </div>
             </div>
-        </div>
-
-        <!-- Metrics Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="glass-card rounded-2xl p-6 hover:bg-white/10 transition-all">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="text-blue-300 text-sm font-mono">SUCCESS RATE</div>
-                    <div class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                        <span class="text-blue-400">🎯</span>
+            
+            <div class="glass-effect rounded-xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Recent Activity</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-300">Claim #12345 processed</span>
+                        <span class="text-green-400">✓</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-300">Eligibility check completed</span>
+                        <span class="text-blue-400">ℹ</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-300">AI analysis generated</span>
+                        <span class="text-purple-400">🤖</span>
                     </div>
                 </div>
-                <div class="metric-value bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent" id="successRate">--</div>
-                <div class="text-gray-400 text-sm mt-1">System Performance</div>
             </div>
-            <div class="glass-card rounded-2xl p-6 hover:bg-white/10 transition-all">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="text-green-300 text-sm font-mono">RESPONSE TIME</div>
-                    <div class="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
-                        <span class="text-green-400">⚡</span>
+            
+            <div class="glass-effect rounded-xl p-6">
+                <h3 class="text-lg font-semibold mb-4">System Health</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-300">API Status</span>
+                        <span class="text-green-400">Online</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-300">Database</span>
+                        <span class="text-green-400">Connected</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-300">AI Services</span>
+                        <span class="text-green-400">Active</span>
                     </div>
                 </div>
-                <div class="metric-value bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent" id="responseTime">--</div>
-                <div class="text-gray-400 text-sm mt-1">Average Response</div>
-            </div>
-            <div class="glass-card rounded-2xl p-6 hover:bg-white/10 transition-all">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="text-purple-300 text-sm font-mono">TOTAL REQUESTS</div>
-                    <div class="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                        <span class="text-purple-400">📊</span>
-                    </div>
-                </div>
-                <div class="metric-value bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent" id="totalRequests">--</div>
-                <div class="text-gray-400 text-sm mt-1">Since Startup</div>
-            </div>
-            <div class="glass-card rounded-2xl p-6 hover:bg-white/10 transition-all">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="text-orange-300 text-sm font-mono">UPTIME</div>
-                    <div class="w-8 h-8 bg-orange-500/20 rounded-lg flex items-center justify-center">
-                        <span class="text-orange-400">⏱️</span>
-                    </div>
-                </div>
-                <div class="metric-value bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent" id="uptime">--</div>
-                <div class="text-gray-400 text-sm mt-1">System Uptime</div>
             </div>
         </div>
 
-        <!-- Charts Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div class="glass-card rounded-2xl p-6">
-                <h3 class="text-xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Performance Overview</h3>
-                <div class="chart-container">
-                    <canvas id="performanceChart"></canvas>
-                </div>
-            </div>
-            <div class="glass-card rounded-2xl p-6">
-                <h3 class="text-xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">AWS Services Health</h3>
-                <div class="chart-container">
-                    <canvas id="servicesChart"></canvas>
-                </div>
+        <!-- Navigation Test -->
+        <div class="glass-effect rounded-xl p-6">
+            <h3 class="text-lg font-semibold mb-4">Navigation Test</h3>
+            <p class="text-gray-400 mb-4">Test the enhanced navigation system:</p>
+            <div class="flex flex-wrap gap-3">
+                <a href="/" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors">Home</a>
+                <a href="/nphies" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">NPHIES</a>
+                <a href="/claims" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors">Claims</a>
+                <a href="/ai-assistant" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors">AI Assistant</a>
+                <a href="/health-services" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors">Health Services</a>
             </div>
         </div>
+    </main>
 
-        <!-- AWS Services Status -->
-        <div class="glass-card rounded-2xl p-8 mb-8">
-            <h3 class="text-2xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                🔧 AWS AI Services Status
-            </h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="glass-card rounded-xl p-4 text-center hover:bg-white/10 transition-all group">
-                    <div class="w-3 h-3 bg-green-400 rounded-full mx-auto mb-2 animate-pulse-slow"></div>
-                    <div class="font-semibold text-blue-300 group-hover:text-blue-200">Bedrock</div>
-                    <div class="text-xs text-gray-400">Foundation Models</div>
-                </div>
-                <div class="glass-card rounded-xl p-4 text-center hover:bg-white/10 transition-all group">
-                    <div class="w-3 h-3 bg-green-400 rounded-full mx-auto mb-2 animate-pulse-slow"></div>
-                    <div class="font-semibold text-green-300 group-hover:text-green-200">SageMaker</div>
-                    <div class="text-xs text-gray-400">Custom ML</div>
-                </div>
-                <div class="glass-card rounded-xl p-4 text-center hover:bg-white/10 transition-all group">
-                    <div class="w-3 h-3 bg-green-400 rounded-full mx-auto mb-2 animate-pulse-slow"></div>
-                    <div class="font-semibold text-purple-300 group-hover:text-purple-200">Textract</div>
-                    <div class="text-xs text-gray-400">Document OCR</div>
-                </div>
-                <div class="glass-card rounded-xl p-4 text-center hover:bg-white/10 transition-all group">
-                    <div class="w-3 h-3 bg-green-400 rounded-full mx-auto mb-2 animate-pulse-slow"></div>
-                    <div class="font-semibold text-orange-300 group-hover:text-orange-200">Comprehend</div>
-                    <div class="text-xs text-gray-400">Medical NLP</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Navigation Links -->
-        <div class="glass-card rounded-2xl p-8">
-            <h3 class="text-2xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Navigation</h3>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <a href="/ai-dashboard" class="group p-4 bg-gradient-to-r from-blue-500/10 to-blue-600/10 hover:from-blue-500/20 hover:to-blue-600/20 rounded-xl border border-blue-500/20 transition-all">
-                    <div class="text-lg mb-1 group-hover:scale-110 transition-transform">🤖</div>
-                    <div class="font-semibold text-blue-300">AI Dashboard</div>
-                    <div class="text-xs text-gray-400">AI Performance</div>
-                </a>
-                <a href="/health-services" class="group p-4 bg-gradient-to-r from-green-500/10 to-green-600/10 hover:from-green-500/20 hover:to-green-600/20 rounded-xl border border-green-500/20 transition-all">
-                    <div class="text-lg mb-1 group-hover:scale-110 transition-transform">🏥</div>
-                    <div class="font-semibold text-green-300">Health Services</div>
-                    <div class="text-xs text-gray-400">AWS Health</div>
-                </a>
-                <a href="/settings" class="group p-4 bg-gradient-to-r from-purple-500/10 to-purple-600/10 hover:from-purple-500/20 hover:to-purple-600/20 rounded-xl border border-purple-500/20 transition-all">
-                    <div class="text-lg mb-1 group-hover:scale-110 transition-transform">⚙️</div>
-                    <div class="font-semibold text-purple-300">Settings</div>
-                    <div class="text-xs text-gray-400">Configuration</div>
-                </a>
-                <a href="/notifications" class="group p-4 bg-gradient-to-r from-orange-500/10 to-orange-600/10 hover:from-orange-500/20 hover:to-orange-600/20 rounded-xl border border-orange-500/20 transition-all">
-                    <div class="text-lg mb-1 group-hover:scale-110 transition-transform">🔔</div>
-                    <div class="font-semibold text-orange-300">Notifications</div>
-                    <div class="text-xs text-gray-400">Alerts & Updates</div>
-                </a>
-                <a href="/profile" class="group p-4 bg-gradient-to-r from-pink-500/10 to-pink-600/10 hover:from-pink-500/20 hover:to-pink-600/20 rounded-xl border border-pink-500/20 transition-all">
-                    <div class="text-lg mb-1 group-hover:scale-110 transition-transform">👤</div>
-                    <div class="font-semibold text-pink-300">Profile</div>
-                    <div class="text-xs text-gray-400">User Account</div>
-                </a>
-                <a href="/nphies" class="group p-4 bg-gradient-to-r from-indigo-500/10 to-indigo-600/10 hover:from-indigo-500/20 hover:to-indigo-600/20 rounded-xl border border-indigo-500/20 transition-all">
-                    <div class="text-lg mb-1 group-hover:scale-110 transition-transform">🔗</div>
-                    <div class="font-semibold text-indigo-300">NPHIES</div>
-                    <div class="text-xs text-gray-400">Integration</div>
-                </a>
-            </div>
-        </div>
-
-        <!-- Refresh Button -->
-        <div class="text-center mt-8">
-            <button onclick="refreshDashboard()" class="glass-card px-8 py-4 rounded-xl font-semibold hover:bg-white/20 transition-all glow-effect">
-                🔄 Refresh Dashboard
-            </button>
-        </div>
-    </div>
-
-    <script>
-        let performanceChart, servicesChart;
-
-        // Update current time
-        function updateTime() {
-            const now = new Date();
-            document.getElementById('currentTime').textContent = now.toLocaleTimeString();
-        }
-        setInterval(updateTime, 1000);
-        updateTime();
-
-        async function loadDashboardData() {
-            try {
-                const response = await fetch('/health');
-                const data = await response.json();
-                
-                document.getElementById('successRate').textContent = data.performance?.success_rate || '98.5%';
-                document.getElementById('responseTime').textContent = data.performance?.average_response_time || '0.8s';
-                document.getElementById('totalRequests').textContent = data.performance?.total_requests?.toLocaleString() || '1,247';
-                document.getElementById('uptime').textContent = data.uptime_seconds ? `${(data.uptime_seconds / 3600).toFixed(1)}h` : '24.5h';
-
-                updateCharts();
-                
-            } catch (error) {
-                console.error('Failed to load dashboard data:', error);
-                document.getElementById('successRate').textContent = '98.5%';
-                document.getElementById('responseTime').textContent = '0.8s';
-                document.getElementById('totalRequests').textContent = '1,247';
-                document.getElementById('uptime').textContent = '24.5h';
-                updateCharts();
-            }
-        }
-
-        function updateCharts() {
-            if (performanceChart) performanceChart.destroy();
-            const ctx1 = document.getElementById('performanceChart').getContext('2d');
-            performanceChart = new Chart(ctx1, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Successful', 'Failed'],
-                    datasets: [{
-                        data: [985, 15],
-                        backgroundColor: ['#10b981', '#ef4444'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Request Success Rate', color: 'white' },
-                        legend: { labels: { color: 'white' } }
-                    }
-                }
-            });
-
-            if (servicesChart) servicesChart.destroy();
-            const ctx2 = document.getElementById('servicesChart').getContext('2d');
-            servicesChart = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: ['Bedrock', 'SageMaker', 'Textract', 'Comprehend', 'HealthLake', 'Transcribe'],
-                    datasets: [{
-                        label: 'Health Score',
-                        data: [100, 100, 100, 100, 100, 100],
-                        backgroundColor: '#10b981',
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'AWS Services Health', color: 'white' },
-                        legend: { labels: { color: 'white' } }
-                    },
-                    scales: {
-                        y: { 
-                            beginAtZero: true, 
-                            max: 100,
-                            ticks: { color: 'white' },
-                            grid: { color: 'rgba(255,255,255,0.1)' }
-                        },
-                        x: { 
-                            ticks: { color: 'white' },
-                            grid: { color: 'rgba(255,255,255,0.1)' }
-                        }
-                    }
-                }
-            });
-        }
-
-        function refreshDashboard() {
-            loadDashboardData();
-        }
-
-        setInterval(loadDashboardData, 30000);
-        loadDashboardData();
-    </script>
+    <!-- Enhanced Navigation System -->
+    <script src="/static/js/navigation.js"></script>
 </body>
 </html>
