@@ -57,7 +57,7 @@
 <body class="font-sans gradient-bg min-h-screen text-white">
     <!-- Navigation -->
     <nav class="glass-effect fixed w-full top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 py-4">
+    <div class="container py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl flex items-center justify-center glow-effect">
@@ -71,10 +71,10 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <a href="/login" class="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors">
+                    <a href="/login" class="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors touch-target">
                         Sign In
                     </a>
-                    <a href="/dashboard" class="px-6 py-2 bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg text-sm font-semibold hover:from-primary-600 hover:to-primary-700 transition-all glow-effect">
+                    <a href="/dashboard" class="px-6 py-2 bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg text-sm font-semibold hover:from-primary-600 hover:to-primary-700 transition-all glow-effect touch-target">
                         Dashboard
                     </a>
                 </div>
@@ -83,8 +83,8 @@
     </nav>
 
     <!-- Hero Section -->
-    <section class="pt-32 pb-20 px-6">
-        <div class="max-w-7xl mx-auto text-center">
+    <section class="pt-32 pb-20">
+        <div class="container text-center">
             <div class="animate-float mb-8">
                 <div class="w-24 h-24 bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl mx-auto flex items-center justify-center glow-effect">
                     <span class="text-4xl">🚀</span>
@@ -101,19 +101,20 @@
                 and intelligent automation for superior patient care and operational excellence.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="/dashboard" class="px-8 py-4 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl text-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all glow-effect">
+                <a href="/dashboard" class="px-8 py-4 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl text-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all glow-effect touch-target">
                     Launch Platform
                 </a>
-                <a href="/ai-assistant" class="px-8 py-4 glass-effect rounded-xl text-lg font-semibold hover:bg-white/10 transition-all">
+                <a href="/ai-assistant" class="px-8 py-4 glass-effect rounded-xl text-lg font-semibold hover:bg-white/10 transition-all touch-target">
                     Try AI Assistant
                 </a>
+                    <button id="demo-bottom-sheet" class="ml-4 px-4 py-2 bg-gray-700 text-sm rounded-lg touch-target">Open Mobile Preview</button>
             </div>
         </div>
     </section>
 
     <!-- Features Grid -->
-    <section class="py-20 px-6">
-        <div class="max-w-7xl mx-auto">
+    <section class="py-20">
+        <div class="container">
             <div class="text-center mb-16">
                 <h2 class="text-4xl font-bold mb-4 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
                     Powered by AWS AI Services
@@ -158,8 +159,8 @@
     </section>
 
     <!-- Stats Section -->
-    <section class="py-20 px-6">
-        <div class="max-w-7xl mx-auto">
+    <section class="py-20">
+        <div class="container">
             <div class="glass-effect rounded-3xl p-12">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
                     <div>
@@ -192,8 +193,8 @@
     </section>
 
     <!-- CTA Section -->
-    <section class="py-20 px-6">
-        <div class="max-w-4xl mx-auto text-center">
+    <section class="py-20">
+        <div class="container max-w-4xl mx-auto text-center">
             <h2 class="text-4xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
                 Ready to Transform Healthcare?
             </h2>
@@ -201,10 +202,10 @@
                 Join the future of healthcare with AI-powered intelligence and seamless NPHIES integration.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="/dashboard" class="px-8 py-4 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl text-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all glow-effect">
+                <a href="/dashboard" class="px-8 py-4 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl text-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all glow-effect touch-target">
                     Get Started Now
                 </a>
-                <a href="/health-services" class="px-8 py-4 glass-effect rounded-xl text-lg font-semibold hover:bg-white/10 transition-all">
+                <a href="/health-services" class="px-8 py-4 glass-effect rounded-xl text-lg font-semibold hover:bg-white/10 transition-all touch-target">
                     View Services
                 </a>
             </div>
@@ -213,7 +214,7 @@
 
     <!-- Footer -->
     <footer class="py-12 px-6 border-t border-white/10">
-        <div class="max-w-7xl mx-auto">
+    <div class="container">
             <div class="flex flex-col md:flex-row justify-between items-center">
                 <div class="flex items-center space-x-3 mb-4 md:mb-0">
                     <div class="w-8 h-8 bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
@@ -233,6 +234,23 @@
 
     <!-- Enhanced Navigation System -->
     <script src="/static/js/navigation.js"></script>
+    <script src="/static/js/footer-navigation.js"></script>
+    <script src="/static/js/arrow-navigation.js"></script>
+        <script src="/static/js/bottom-sheet.js"></script>
+        <script>
+            document.getElementById('demo-bottom-sheet')?.addEventListener('click', ()=>{
+                const content = `
+                    <div style="padding:1rem;color:#fff">
+                        <h3 style="margin:0 0 .5rem">Mobile Preview</h3>
+                        <p style="margin:0">This is a demo bottom-sheet. On small screens, replace desktop modals with this pattern.</p>
+                        <div style="margin-top:1rem;text-align:right"><button id="close-sheet" class="touch-target" style="padding:.5rem 1rem;background:#3b82f6;border-radius:8px;border:none;color:#fff">Close</button></div>
+                    </div>
+                `;
+                const sheet = window.BottomSheet.create(content);
+                window.BottomSheet.open();
+                setTimeout(()=> document.getElementById('close-sheet')?.addEventListener('click', ()=> window.BottomSheet.close()), 50);
+            });
+        </script>
     
     <script>
         // Add smooth scrolling and animations

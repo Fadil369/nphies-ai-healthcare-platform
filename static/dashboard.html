@@ -18,7 +18,7 @@
 <body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white min-h-screen">
     <!-- Navigation -->
     <nav class="glass-effect border-b border-white/10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="container">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-4">
                     <div class="text-xl font-bold">🏥 NPHIES-AI</div>
@@ -31,15 +31,18 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <a href="/profile" class="text-gray-300 hover:text-white transition-colors">Profile</a>
-                    <a href="/settings" class="text-gray-300 hover:text-white transition-colors">Settings</a>
+                    <a href="/profile" class="text-gray-300 hover:text-white transition-colors touch-target">Profile</a>
+                    <a href="/settings" class="text-gray-300 hover:text-white transition-colors touch-target">Settings</a>
+                    <div class="theme-toggle">
+                        <button id="theme-toggle-btn" title="Toggle theme" class="touch-target">🌓</button>
+                    </div>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="container py-8">
         <!-- Header -->
         <div class="mb-8">
             <h1 class="text-3xl font-bold mb-2">Healthcare Dashboard</h1>
@@ -148,16 +151,20 @@
             <h3 class="text-lg font-semibold mb-4">Navigation Test</h3>
             <p class="text-gray-400 mb-4">Test the enhanced navigation system:</p>
             <div class="flex flex-wrap gap-3">
-                <a href="/" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors">Home</a>
-                <a href="/nphies" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">NPHIES</a>
-                <a href="/claims" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors">Claims</a>
-                <a href="/ai-assistant" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors">AI Assistant</a>
-                <a href="/health-services" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors">Health Services</a>
+                <a href="/" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors touch-target">Home</a>
+                <a href="/nphies" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors touch-target">NPHIES</a>
+                <a href="/claims" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors touch-target">Claims</a>
+                <a href="/ai-assistant" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors touch-target">AI Assistant</a>
+                <a href="/health-services" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors touch-target">Health Services</a>
             </div>
         </div>
     </main>
 
     <!-- Enhanced Navigation System -->
     <script src="/static/js/navigation.js"></script>
+    <script src="/static/js/footer-navigation.js"></script>
+    <script src="/static/js/arrow-navigation.js"></script>
+    <script src="/static/js/theme-toggle.js"></script>
+    <script>document.getElementById('theme-toggle-btn')?.addEventListener('click', ()=> window.NPHIES_Theme.toggle());</script>
 </body>
 </html>

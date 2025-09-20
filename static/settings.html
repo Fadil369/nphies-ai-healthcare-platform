@@ -13,7 +13,7 @@
 </head>
 <body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white min-h-screen">
     <nav class="glass-effect border-b border-white/10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="container">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-4">
                     <div class="text-xl font-bold">🏥 NPHIES-AI</div>
@@ -114,23 +114,23 @@
             <div class="glass-effect rounded-xl p-6">
                 <h2 class="text-xl font-semibold mb-6">Security</h2>
                 <div class="space-y-4">
-                    <button class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-left">
+                    <button class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-left touch-target">
                         Change Password
                     </button>
-                    <button class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors text-left">
+                    <button class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors text-left touch-target">
                         Enable Two-Factor Authentication
                     </button>
-                    <button class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-left">
+                    <button class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-left touch-target">
                         Download Activity Log
                     </button>
                 </div>
             </div>
 
             <div class="flex justify-center space-x-4">
-                <button class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+                <button class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors touch-target">
                     Save Settings
                 </button>
-                <a href="/dashboard" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors">
+                <a href="/dashboard" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors touch-target">
                     Cancel
                 </a>
             </div>
@@ -138,5 +138,7 @@
     </main>
 
     <script src="/static/js/navigation.js"></script>
+    <script src="/static/js/footer-navigation.js"></script>
+    <script src="/static/js/arrow-navigation.js"></script>
 </body>
 </html>
