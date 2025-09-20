@@ -1,0 +1,36 @@
+{
+    "family": "brainsait-nphies-task",
+    "taskRoleArn": "arn:aws:iam::108782081552:role/brainsait-nphies-ecs-task-role",
+    "executionRoleArn": "arn:aws:iam::108782081552:role/brainsait-nphies-ecs-task-role",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": ["FARGATE"],
+    "cpu": "256",
+    "memory": "512",
+    "containerDefinitions": [
+        {
+            "name": "brainsait-nphies-container",
+            "image": "108782081552.dkr.ecr.us-east-1.amazonaws.com/brainsait-nphies-repo:latest",
+            "portMappings": [
+                {
+                    "containerPort": 8000,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true,
+            "environment": [
+                {
+                    "name": "ENVIRONMENT",
+                    "value": "production"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/brainsait-nphies",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "ecs"
+                }
+            }
+        }
+    ]
+}

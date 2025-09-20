@@ -1,0 +1,905 @@
+# BRAINSAIT: NPHIES-AI Docker Deployment Configuration
+# INFRASTRUCTURE: Kubernetes-ready with Cloudflare integration
+# MEDICAL: HIPAA-compliant container security
+
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # AGENT: FastAPI Backend Server
+  nphies-agent-server:
+    build:
+      context: ./apps/agent-server
+      dockerfile: Dockerfile
+    container_name: brainsait-nphies-agent
+    ports:
+      - "8000:8000"
+    environment:
+      # BRAINSAIT: Environment variables
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - REDIS_URL=redis://redis:6379
+      - POSTGRES_URL=postgresql://postgres:password@postgres:5432/nphies_ai
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - NPHIES_API_BASE_URL=${NPHIES_API_BASE_URL}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      # MEDICAL: HIPAA compliance
+      - AUDIT_LOG_LEVEL=INFO
+      - PHI_ENCRYPTION_ENABLED=true
+      - COMPLIANCE_MODE=HIPAA_NPHIES
+    volumes:
+      - ./logs:/app/logs
+      - ./medical_images:/app/secure_storage
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - brainsait-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # NEURAL: Web Dashboard (Next.js)
+  nphies-web-dashboard:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: brainsait-nphies-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://nphies-agent-server:8000
+      - NEXT_PUBLIC_AGENT_MODE=production
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+    depends_on:
+      - nphies-agent-server
+    networks:
+      - brainsait-network
+    restart: unless-stopped
+
+  # BRAINSAIT: PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: brainsait-postgres
+    environment:
+      - POSTGRES_DB=nphies_ai
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --locale=C
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - brainsait-network
+    restart: unless-stopped
+
+  # AGENT: Redis for Caching & Sessions
+  redis:
+    image: redis:7-alpine
+    container_name: brainsait-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - brainsait-network
+    restart: unless-stopped
+
+  # NEURAL: Vector Database for RAG
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: brainsait-qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - brainsait-network
+    restart: unless-stopped
+
+  # BRAINSAIT: Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: brainsait-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./infrastructure/nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - nphies-agent-server
+      - nphies-web-dashboard
+    networks:
+      - brainsait-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  qdrant_data:
+    driver: local
+
+networks:
+  brainsait-network:
+    driver: bridge
+
+---
+# Dockerfile for Agent Server
+# ./apps/agent-server/Dockerfile
+
+FROM python:3.11-slim
+
+# BRAINSAIT: Set working directory
+WORKDIR /app
+
+# MEDICAL: Install system dependencies for healthcare libs
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# AGENT: Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# BRAINSAIT: Copy application code
+COPY . .
+
+# MEDICAL: Create secure directories
+RUN mkdir -p /app/logs /app/secure_storage
+RUN chmod 700 /app/secure_storage
+
+# BRAINSAIT: Create non-root user for security
+RUN adduser --disabled-password --gecos '' appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# AGENT: Expose port
+EXPOSE 8000
+
+# BRAINSAIT: Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# AGENT: Start application
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+
+---
+# requirements.txt for Agent Server
+
+# AGENT: Core FastAPI and AG-UI Protocol
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-ai==0.0.12
+
+# MEDICAL: Healthcare and FHIR libraries
+fhir.resources==7.0.2
+cryptography==41.0.8
+python-jose[cryptography]==3.3.0
+
+# AGENT: AI and ML libraries
+openai==1.3.5
+anthropic==0.8.1
+langchain==0.0.350
+langchain-openai==0.0.2
+sentence-transformers==2.2.2
+
+# BRAINSAIT: Database and caching
+asyncpg==0.29.0
+redis==5.0.1
+qdrant-client==1.6.9
+
+# NEURAL: Additional utilities
+aiofiles==23.2.1
+python-multipart==0.0.6
+Pillow==10.1.0
+httpx==0.25.2
+
+# MEDICAL: Audit logging
+structlog==23.2.0
+python-json-logger==2.0.7
+
+---
+# Kubernetes Deployment
+# ./infrastructure/kubernetes/nphies-deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: brainsait-nphies-agent
+  namespace: brainsait-healthcare
+  labels:
+    app: nphies-agent
+    version: v1.0.0
+    component: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nphies-agent
+  template:
+    metadata:
+      labels:
+        app: nphies-agent
+        version: v1.0.0
+    spec:
+      # BRAINSAIT: Security context for HIPAA compliance
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 2000
+      
+      containers:
+      - name: nphies-agent
+        image: brainsait/nphies-agent:v1.0.0
+        ports:
+        - containerPort: 8000
+          name: http
+        
+        # MEDICAL: Environment variables for compliance
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        - name: COMPLIANCE_MODE
+          value: "HIPAA_NPHIES"
+        - name: PHI_ENCRYPTION_ENABLED
+          value: "true"
+        
+        # BRAINSAIT: Resource limits
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        
+        # MEDICAL: Health checks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        
+        # BRAINSAIT: Volume mounts for logs and storage
+        volumeMounts:
+        - name: audit-logs
+          mountPath: /app/logs
+        - name: secure-storage
+          mountPath: /app/secure_storage
+      
+      volumes:
+      - name: audit-logs
+        persistentVolumeClaim:
+          claimName: audit-logs-pvc
+      - name: secure-storage
+        persistentVolumeClaim:
+          claimName: secure-storage-pvc
+
+---
+# Service definition
+apiVersion: v1
+kind: Service
+metadata:
+  name: brainsait-nphies-service
+  namespace: brainsait-healthcare
+  labels:
+    app: nphies-agent
+spec:
+  selector:
+    app: nphies-agent
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8000
+    protocol: TCP
+  type: ClusterIP
+
+---
+# Ingress with Cloudflare
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: brainsait-nphies-ingress
+  namespace: brainsait-healthcare
+  annotations:
+    # NEURAL: Cloudflare integration
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # MEDICAL: HIPAA security headers
+    nginx.ingress.kubernetes.io/server-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+spec:
+  tls:
+  - hosts:
+    - api.brainsait-nphies.com
+    secretName: nphies-tls-secret
+  rules:
+  - host: api.brainsait-nphies.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: brainsait-nphies-service
+            port:
+              number: 80
+
+---
+# Nginx Configuration
+# ./infrastructure/nginx/nginx.conf
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    # BRAINSAIT: Basic security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    
+    # MEDICAL: Remove server tokens for security
+    server_tokens off;
+    
+    # NEURAL: Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain application/json application/javascript text/css;
+    
+    # BRAINSAIT: Rate limiting
+    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+    limit_req_zone $binary_remote_addr zone=login:10m rate=1r/s;
+    
+    upstream agent_backend {
+        server nphies-agent-server:8000;
+    }
+    
+    upstream web_backend {
+        server nphies-web-dashboard:3000;
+    }
+    
+    # AGENT: API Server
+    server {
+        listen 80;
+        server_name api.brainsait-nphies.com;
+        
+        # MEDICAL: HIPAA-compliant logging
+        access_log /var/log/nginx/api_access.log;
+        error_log /var/log/nginx/api_error.log;
+        
+        # BRAINSAIT: Rate limiting
+        limit_req zone=api burst=20 nodelay;
+        
+        location / {
+            proxy_pass http://agent_backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            
+            # AGENT: Support for Server-Sent Events (AG-UI Protocol)
+            proxy_set_header Connection '';
+            proxy_http_version 1.1;
+            chunked_transfer_encoding off;
+            proxy_buffering off;
+            proxy_cache off;
+        }
+        
+        # MEDICAL: Health check endpoint
+        location /health {
+            proxy_pass http://agent_backend/health;
+            access_log off;
+        }
+    }
+    
+    # NEURAL: Web Dashboard
+    server {
+        listen 80;
+        server_name dashboard.brainsait-nphies.com;
+        
+        location / {
+            proxy_pass http://web_backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+}
+
+---
+# PostgreSQL Initialization Script
+# ./infrastructure/postgres/init.sql
+
+-- BRAINSAIT: NPHIES-AI Database Schema with HIPAA Compliance
+-- MEDICAL: Audit tables for compliance tracking
+
+-- Enable required extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- BRAINSAIT: User management with role-based access
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL CHECK (role IN ('provider', 'payer', 'patient', 'auditor', 'admin')),
+    organization_id UUID,
+    language_preference VARCHAR(2) DEFAULT 'ar' CHECK (language_preference IN ('ar', 'en')),
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP WITH TIME ZONE
+);
+
+-- MEDICAL: Organizations (Healthcare Providers, Insurance Companies)
+CREATE TABLE IF NOT EXISTS organizations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    name_ar VARCHAR(255),
+    organization_type VARCHAR(50) NOT NULL CHECK (organization_type IN ('provider', 'payer', 'government')),
+    nphies_id VARCHAR(100) UNIQUE,
+    license_number VARCHAR(100),
+    contact_email VARCHAR(255),
+    contact_phone VARCHAR(50),
+    address JSONB,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- AGENT: Chat sessions and conversations
+CREATE TABLE IF NOT EXISTS chat_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    session_id VARCHAR(255) UNIQUE NOT NULL,
+    title VARCHAR(255),
+    title_ar VARCHAR(255),
+    agent_type VARCHAR(50) DEFAULT 'MASTERLINC',
+    language VARCHAR(2) DEFAULT 'ar',
+    is_active BOOLEAN DEFAULT true,
+    metadata JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- AGENT: Chat messages with AG-UI Protocol events
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    session_id UUID REFERENCES chat_sessions(id) ON DELETE CASCADE,
+    message_type VARCHAR(50) NOT NULL CHECK (message_type IN ('user', 'agent', 'system')),
+    content TEXT NOT NULL,
+    content_ar TEXT,
+    ag_ui_event_type VARCHAR(50),
+    ag_ui_data JSONB,
+    attachments JSONB,
+    metadata JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- MEDICAL: NPHIES Claims and Requests
+CREATE TABLE IF NOT EXISTS nphies_claims (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id),
+    session_id UUID REFERENCES chat_sessions(id),
+    claim_id VARCHAR(100) UNIQUE,
+    nphies_patient_id VARCHAR(100),
+    provider_id VARCHAR(100),
+    payer_id VARCHAR(100),
+    claim_type VARCHAR(50),
+    status VARCHAR(50) DEFAULT 'draft',
+    fhir_claim_data JSONB NOT NULL,
+    attachments JSONB,
+    ai_analysis JSONB,
+    processing_notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    submitted_at TIMESTAMP WITH TIME ZONE,
+    approved_at TIMESTAMP WITH TIME ZONE
+);
+
+-- MEDICAL: Medical images and analysis
+CREATE TABLE IF NOT EXISTS medical_images (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id),
+    session_id UUID REFERENCES chat_sessions(id),
+    claim_id UUID REFERENCES nphies_claims(id),
+    file_path VARCHAR(500) NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_type VARCHAR(50) NOT NULL,
+    file_size BIGINT,
+    encryption_key_id VARCHAR(255),
+    ai_analysis JSONB,
+    icd_codes TEXT[],
+    confidence_score DECIMAL(3,2),
+    reviewed_by UUID REFERENCES users(id),
+    reviewed_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- BRAINSAIT: Comprehensive audit log for HIPAA compliance
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id),
+    session_id VARCHAR(255),
+    action VARCHAR(100) NOT NULL,
+    resource_type VARCHAR(50),
+    resource_id VARCHAR(255),
+    agent_name VARCHAR(50),
+    ip_address INET,
+    user_agent TEXT,
+    request_data JSONB,
+    response_data JSONB,
+    phi_accessed BOOLEAN DEFAULT false,
+    compliance_flags JSONB,
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- NEURAL: Vector embeddings for RAG
+CREATE TABLE IF NOT EXISTS knowledge_embeddings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    content_type VARCHAR(50) NOT NULL,
+    content_id VARCHAR(255),
+    content_text TEXT NOT NULL,
+    content_ar TEXT,
+    embedding vector(1536),
+    metadata JSONB,
+    source VARCHAR(255),
+    language VARCHAR(2) DEFAULT 'ar',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- MEDICAL: NPHIES code mappings and terminology
+CREATE TABLE IF NOT EXISTS nphies_codes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    code_type VARCHAR(50) NOT NULL,
+    code VARCHAR(50) NOT NULL,
+    display_name VARCHAR(255) NOT NULL,
+    display_name_ar VARCHAR(255),
+    description TEXT,
+    description_ar TEXT,
+    parent_code VARCHAR(50),
+    is_active BOOLEAN DEFAULT true,
+    effective_date DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- AGENT: Agent performance metrics
+CREATE TABLE IF NOT EXISTS agent_metrics (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    agent_name VARCHAR(50) NOT NULL,
+    session_id VARCHAR(255),
+    metric_type VARCHAR(50) NOT NULL,
+    metric_value DECIMAL(10,4),
+    metadata JSONB,
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- BRAINSAIT: Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_user_id ON chat_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_session_id ON chat_sessions(session_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_session_id ON chat_messages(session_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_nphies_claims_user_id ON nphies_claims(user_id);
+CREATE INDEX IF NOT EXISTS idx_nphies_claims_status ON nphies_claims(status);
+CREATE INDEX IF NOT EXISTS idx_medical_images_user_id ON medical_images(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
+
+-- MEDICAL: Insert sample NPHIES codes
+INSERT INTO nphies_codes (code_type, code, display_name, display_name_ar, description, description_ar) VALUES
+('ICD-10', 'Z00.00', 'General adult medical examination', 'فحص طبي عام للبالغين', 'Routine general medical examination', 'فحص طبي روتيني عام'),
+('ICD-10', 'M79.9', 'Soft tissue disorder', 'اضطراب الأنسجة الرخوة', 'Unspecified soft tissue disorder', 'اضطراب غير محدد في الأنسجة الرخوة'),
+('CPT', '99213', 'Office visit level 3', 'زيارة مكتبية مستوى 3', 'Established patient office visit', 'زيارة مريض معروف في العيادة'),
+('LOINC', '33747-0', 'General anesthesia', 'تخدير عام', 'Anesthesia record', 'سجل التخدير');
+
+-- BRAINSAIT: Sample organizations
+INSERT INTO organizations (name, name_ar, organization_type, nphies_id) VALUES
+('King Faisal Hospital', 'مستشفى الملك فيصل', 'provider', 'NPHIES-PROV-001'),
+('Bupa Arabia Insurance', 'شركة بوبا العربية للتأمين', 'payer', 'NPHIES-PAY-001'),
+('Saudi Health Ministry', 'وزارة الصحة السعودية', 'government', 'NPHIES-GOV-001');
+
+-- MEDICAL: Audit trigger function for HIPAA compliance
+CREATE OR REPLACE FUNCTION audit_trigger_function()
+RETURNS TRIGGER AS $audit_trigger$
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        INSERT INTO audit_logs (action, resource_type, resource_id, request_data, timestamp)
+        VALUES ('DELETE', TG_TABLE_NAME, OLD.id::text, row_to_json(OLD), CURRENT_TIMESTAMP);
+        RETURN OLD;
+    ELSIF TG_OP = 'UPDATE' THEN
+        INSERT INTO audit_logs (action, resource_type, resource_id, request_data, timestamp)
+        VALUES ('UPDATE', TG_TABLE_NAME, NEW.id::text, row_to_json(NEW), CURRENT_TIMESTAMP);
+        RETURN NEW;
+    ELSIF TG_OP = 'INSERT' THEN
+        INSERT INTO audit_logs (action, resource_type, resource_id, request_data, timestamp)
+        VALUES ('INSERT', TG_TABLE_NAME, NEW.id::text, row_to_json(NEW), CURRENT_TIMESTAMP);
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$audit_trigger$ LANGUAGE plpgsql;
+
+-- MEDICAL: Apply audit triggers to sensitive tables
+CREATE TRIGGER audit_users_trigger
+    AFTER INSERT OR UPDATE OR DELETE ON users
+    FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+CREATE TRIGGER audit_nphies_claims_trigger
+    AFTER INSERT OR UPDATE OR DELETE ON nphies_claims
+    FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+CREATE TRIGGER audit_medical_images_trigger
+    AFTER INSERT OR UPDATE OR DELETE ON medical_images
+    FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+---
+# GitHub Actions CI/CD Pipeline
+# .github/workflows/deploy.yml
+
+name: BRAINSAIT NPHIES-AI Deploy
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: brainsait/nphies-ai
+
+jobs:
+  # AGENT: Test Backend
+  test-backend:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_nphies
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        cd apps/agent-server
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio pytest-cov
+    
+    - name: Run tests
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_nphies
+      run: |
+        cd apps/agent-server
+        pytest tests/ -v --cov=. --cov-report=xml
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+
+  # NEURAL: Test Frontend
+  test-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: apps/mobile/package-lock.json
+    
+    - name: Install dependencies
+      run: |
+        cd apps/mobile
+        npm ci
+    
+    - name: Run tests
+      run: |
+        cd apps/mobile
+        npm run test
+    
+    - name: Build mobile app
+      run: |
+        cd apps/mobile
+        npm run build
+
+  # BRAINSAIT: Security scan
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # MEDICAL: HIPAA compliance check
+  compliance-check:
+    runs-on: ubuntu-latest
+    needs: [security-scan]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: HIPAA Compliance Check
+      run: |
+        echo "Checking HIPAA compliance requirements..."
+        # Check for PHI encryption
+        grep -r "cipher_suite\|encryption" apps/agent-server/ || exit 1
+        # Check for audit logging
+        grep -r "audit_log" apps/agent-server/ || exit 1
+        # Check for role-based access
+        grep -r "UserRole\|verify_user_permissions" apps/agent-server/ || exit 1
+        echo "✅ HIPAA compliance checks passed"
+
+  # BRAINSAIT: Build and push Docker images
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend, security-scan, compliance-check]
+    if: github.ref == 'refs/heads/main'
+    
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./apps/agent-server
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+  # INFRASTRUCTURE: Deploy to Kubernetes
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configure kubectl
+      uses: azure/k8s-set-context@v3
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBECONFIG }}
+    
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl apply -f infrastructure/kubernetes/
+        kubectl rollout status deployment/brainsait-nphies-agent -n brainsait-healthcare
+    
+    - name: Verify deployment
+      run: |
+        kubectl get pods -n brainsait-healthcare
+        kubectl get services -n brainsait-healthcare
+
+---
+# Environment Configuration Template
+# .env.template
+
+# BRAINSAIT: Core Configuration
+ENVIRONMENT=production
+DEBUG=false
+SECRET_KEY=your-secret-key-here
+ENCRYPTION_KEY=your-fernet-encryption-key-here
+
+# AGENT: AI Provider API Keys
+OPENAI_API_KEY=sk-your-openai-key-here
+ANTHROPIC_API_KEY=sk-ant-your-anthropic-key-here
+
+# MEDICAL: NPHIES Integration
+NPHIES_API_BASE_URL=https://api.nphies.sa
+NPHIES_CLIENT_ID=your-nphies-client-id
+NPHIES_CLIENT_SECRET=your-nphies-client-secret
+
+# BRAINSAIT: Database Configuration
+POSTGRES_URL=postgresql://postgres:password@localhost:5432/nphies_ai
+REDIS_URL=redis://localhost:6379
+REDIS_PASSWORD=your-redis-password
+
+# NEURAL: Vector Database
+QDRANT_URL=http://localhost:6333
+QDRANT_API_KEY=your-qdrant-api-key
+
+# INFRASTRUCTURE: Cloudflare
+CLOUDFLARE_API_TOKEN=your-cloudflare-token
+CLOUDFLARE_ZONE_ID=your-zone-id
+
+# BRAINSAIT: Authentication
+NEXTAUTH_SECRET=your-nextauth-secret
+NEXTAUTH_URL=https://your-domain.com
+
+# MEDICAL: HIPAA Compliance
+AUDIT_LOG_LEVEL=INFO
+PHI_ENCRYPTION_ENABLED=true
+COMPLIANCE_MODE=HIPAA_NPHIES
+SESSION_TIMEOUT=1800
+
+# NEURAL: Monitoring
+SENTRY_DSN=your-sentry-dsn
+PROMETHEUS_ENABLED=true

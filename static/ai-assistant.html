@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant - BrainSAIT NPHIES</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .chat-container { background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); height: 600px; display: flex; flex-direction: column; }
+        .chat-header { padding: 20px; border-bottom: 1px solid #eee; background: #f8f9fa; border-radius: 10px 10px 0 0; }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; }
+        .message { margin-bottom: 15px; display: flex; align-items: flex-start; }
+        .message.user { justify-content: flex-end; }
+        .message-content { max-width: 70%; padding: 12px 16px; border-radius: 18px; }
+        .message.user .message-content { background: #667eea; color: white; }
+        .message.ai .message-content { background: #f1f3f4; color: #333; }
+        .chat-input { padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; }
+        .chat-input input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; outline: none; }
+        .chat-input button { padding: 12px 24px; background: #667eea; color: white; border: none; border-radius: 25px; cursor: pointer; }
+        .typing-indicator { display: none; padding: 10px; color: #666; font-style: italic; }
+        .status-bar { padding: 10px 20px; background: #e8f5e8; color: #2d5a2d; font-size: 14px; border-radius: 0 0 10px 10px; }
+        .ai-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .feature-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .feature-card h3 { color: #667eea; margin-bottom: 10px; }
+        .quick-actions { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .quick-action { padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 20px; cursor: pointer; font-size: 14px; }
+        .quick-action:hover { background: #5a6fd8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Healthcare Assistant</h1>
+            <p>Real-time AI support for NPHIES, claims, eligibility, and healthcare queries</p>
+        </div>
+
+        <div class="ai-features">
+            <div class="feature-card">
+                <h3>🏥 Healthcare Expertise</h3>
+                <p>Specialized knowledge in NPHIES integration, insurance claims, and healthcare workflows</p>
+            </div>
+            <div class="feature-card">
+                <h3>⚡ Real-time Streaming</h3>
+                <p>Instant responses with live typing indicators and progressive answer delivery</p>
+            </div>
+            <div class="feature-card">
+                <h3>🔍 Smart Analysis</h3>
+                <p>AI-powered analysis of claims, eligibility checks, and pre-authorization requests</p>
+            </div>
+        </div>
+
+        <div class="quick-actions">
+            <button class="quick-action" onclick="sendQuickMessage('Check my eligibility status')">Check Eligibility</button>
+            <button class="quick-action" onclick="sendQuickMessage('Help with claim submission')">Submit Claim</button>
+            <button class="quick-action" onclick="sendQuickMessage('Pre-authorization requirements')">Pre-Authorization</button>
+            <button class="quick-action" onclick="sendQuickMessage('NPHIES system status')">NPHIES Status</button>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-header">
+                <h3>💬 Chat with AI Assistant</h3>
+                <p>Ask me anything about healthcare, insurance, or NPHIES integration</p>
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <div class="message ai">
+                    <div class="message-content">
+                        👋 Hello! I'm your AI healthcare assistant. I can help you with:
+                        <br>• Insurance eligibility checks
+                        <br>• Claims processing and status
+                        <br>• Pre-authorization requirements
+                        <br>• NPHIES integration support
+                        <br><br>How can I assist you today?
+                    </div>
+                </div>
+            </div>
+            
+            <div class="typing-indicator" id="typingIndicator">
+                🤖 AI is thinking...
+            </div>
+            
+            <div class="chat-input">
+                <input type="text" id="messageInput" placeholder="Type your healthcare question..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+            
+            <div class="status-bar">
+                ✅ AI Assistant Active | Real-time Streaming Enabled | Healthcare Context Loaded
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isTyping = false;
+        let currentSessionId = null;
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !isTyping) {
+                sendMessage();
+            }
+        }
+
+        function sendQuickMessage(message) {
+            document.getElementById('messageInput').value = message;
+            sendMessage();
+        }
+
+        function addMessage(content, isUser = false) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = content;
+            
+            messageDiv.appendChild(contentDiv);
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'block';
+            isTyping = true;
+        }
+
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'none';
+            isTyping = false;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message || isTyping) return;
+            
+            // Add user message
+            addMessage(message, true);
+            input.value = '';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                // Send to streaming endpoint
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        language: 'en',
+                        session_id: currentSessionId,
+                        context: 'healthcare'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let aiMessageDiv = null;
+                let aiContentDiv = null;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                
+                                if (data.type === 'session_start') {
+                                    currentSessionId = data.session_id;
+                                }
+                                else if (data.type === 'thinking') {
+                                    // Keep typing indicator
+                                }
+                                else if (data.type === 'partial_response') {
+                                    hideTypingIndicator();
+                                    
+                                    if (!aiMessageDiv) {
+                                        const messagesContainer = document.getElementById('chatMessages');
+                                        aiMessageDiv = document.createElement('div');
+                                        aiMessageDiv.className = 'message ai';
+                                        aiContentDiv = document.createElement('div');
+                                        aiContentDiv.className = 'message-content';
+                                        aiMessageDiv.appendChild(aiContentDiv);
+                                        messagesContainer.appendChild(aiMessageDiv);
+                                    }
+                                    
+                                    aiContentDiv.innerHTML = data.text;
+                                    document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+                                }
+                                else if (data.type === 'final_response') {
+                                    hideTypingIndicator();
+                                    
+                                    if (!aiMessageDiv) {
+                                        addMessage(data.message);
+                                    } else {
+                                        aiContentDiv.innerHTML = data.message;
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('Error parsing SSE data:', e);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                hideTypingIndicator();
+                addMessage('❌ Sorry, I encountered an error. Please try again.');
+                console.error('Chat error:', error);
+            }
+        }
+
+        // Initialize WebSocket for real-time features (optional)
+        function initWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/chat`;
+            
+            try {
+                const ws = new WebSocket(wsUrl);
+                
+                ws.onopen = function() {
+                    console.log('WebSocket connected for real-time features');
+                };
+                
+                ws.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'ai_response') {
+                        addMessage(data.message);
+                    }
+                };
+                
+                ws.onerror = function(error) {
+                    console.log('WebSocket error:', error);
+                };
+            } catch (error) {
+                console.log('WebSocket not available, using HTTP streaming');
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initWebSocket();
+        });
+    </script>
+</body>
+</html>

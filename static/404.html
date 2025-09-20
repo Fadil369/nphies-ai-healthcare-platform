@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found - NPHIES-AI Healthcare Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/routing.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            min-height: 100vh;
+            color: #ffffff;
+        }
+        
+        .error-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .error-content {
+            text-align: center;
+            max-width: 600px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .error-icon {
+            font-size: 8rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 900;
+        }
+        
+        .error-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .error-message {
+            font-size: 1.125rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .error-suggestions {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .suggestions-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #ffffff;
+        }
+        
+        .suggestions-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .suggestions-list li {
+            padding: 0.5rem 0;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .suggestions-list a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .suggestions-list a:hover {
+            color: #60a5fa;
+        }
+        
+        .error-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: #ffffff;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+        
+        .search-container {
+            margin: 2rem 0;
+        }
+        
+        .search-input {
+            width: 100%;
+            max-width: 400px;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        
+        .footer-info {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.875rem;
+        }
+        
+        @media (max-width: 768px) {
+            .error-content {
+                padding: 2rem;
+                margin: 1rem;
+            }
+            
+            .error-icon {
+                font-size: 6rem;
+            }
+            
+            .error-title {
+                font-size: 2rem;
+            }
+            
+            .error-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-content">
+            <div class="error-icon">404</div>
+            <h1 class="error-title">Page Not Found</h1>
+            <p class="error-message">
+                The page you're looking for doesn't exist or has been moved. 
+                Don't worry, let's get you back on track with our healthcare platform.
+            </p>
+            
+            <div class="search-container">
+                <input type="text" 
+                       class="search-input" 
+                       placeholder="Search for pages, features, or help..."
+                       id="search-input">
+            </div>
+            
+            <div class="error-suggestions">
+                <h3 class="suggestions-title">Popular Pages</h3>
+                <ul class="suggestions-list">
+                    <li>🏥 <a href="/dashboard" data-route="/dashboard">Healthcare Dashboard</a> - Main overview and metrics</li>
+                    <li>🤖 <a href="/ai-assistant" data-route="/ai-assistant">AI Assistant</a> - Intelligent healthcare support</li>
+                    <li>📋 <a href="/claims" data-route="/claims">Claims Processing</a> - Submit and track insurance claims</li>
+                    <li>✅ <a href="/eligibility" data-route="/eligibility">Eligibility Check</a> - Verify patient insurance coverage</li>
+                    <li>🔐 <a href="/pre-authorization" data-route="/pre-authorization">Pre-Authorization</a> - Request procedure approvals</li>
+                    <li>🇸🇦 <a href="/nphies" data-route="/nphies">NPHIES Integration</a> - Saudi health insurance system</li>
+                </ul>
+            </div>
+            
+            <div class="error-actions">
+                <a href="/dashboard" class="btn btn-primary" data-route="/dashboard">
+                    🏠 Go to Dashboard
+                </a>
+                <button class="btn btn-secondary" onclick="history.back()">
+                    ← Go Back
+                </button>
+                <a href="/ai-assistant" class="btn btn-secondary" data-route="/ai-assistant">
+                    💬 Ask AI Assistant
+                </a>
+            </div>
+            
+            <div class="footer-info">
+                <p>
+                    <strong>NPHIES-AI Healthcare Platform</strong><br>
+                    Advanced AI-powered healthcare middleware with AWS services integration<br>
+                    Need help? Contact our support team or use the AI assistant.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Router -->
+    <script src="/static/js/router.js"></script>
+    <script src="/static/js/navigation.js"></script>
+    
+    <script>
+        // Enhanced search functionality
+        document.getElementById('search-input').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            const suggestions = document.querySelectorAll('.suggestions-list a');
+            
+            suggestions.forEach(link => {
+                const text = link.textContent.toLowerCase();
+                const listItem = link.closest('li');
+                
+                if (text.includes(query) || query === '') {
+                    listItem.style.display = 'block';
+                } else {
+                    listItem.style.display = 'none';
+                }
+            });
+        });
+        
+        // Handle search on Enter
+        document.getElementById('search-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const query = e.target.value.toLowerCase();
+                
+                // Simple search routing
+                if (query.includes('dashboard') || query.includes('home')) {
+                    window.navigate('/dashboard');
+                } else if (query.includes('ai') || query.includes('assistant') || query.includes('chat')) {
+                    window.navigate('/ai-assistant');
+                } else if (query.includes('claim')) {
+                    window.navigate('/claims');
+                } else if (query.includes('eligibility') || query.includes('coverage')) {
+                    window.navigate('/eligibility');
+                } else if (query.includes('auth') || query.includes('approval')) {
+                    window.navigate('/pre-authorization');
+                } else if (query.includes('nphies') || query.includes('saudi')) {
+                    window.navigate('/nphies');
+                } else if (query.includes('profile') || query.includes('user')) {
+                    window.navigate('/profile');
+                } else if (query.includes('settings') || query.includes('config')) {
+                    window.navigate('/settings');
+                } else if (query.includes('notification') || query.includes('alert')) {
+                    window.navigate('/notifications');
+                } else if (query.includes('health') || query.includes('aws')) {
+                    window.navigate('/health-services');
+                } else {
+                    // Default to dashboard if no match
+                    window.navigate('/dashboard');
+                }
+            }
+        });
+        
+        // Track 404 error
+        if (window.gtag) {
+            window.gtag('event', 'exception', {
+                description: '404_page_not_found',
+                fatal: false,
+                custom_map: {
+                    error_page: '404',
+                    requested_path: window.location.pathname
+                }
+            });
+        }
+        
+        // Auto-focus search input
+        document.getElementById('search-input').focus();
+    </script>
+</body>
+</html>

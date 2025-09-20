@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏥 NPHIES-AI Healthcare Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        'primary': {
+                            50: '#f0f9ff',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            900: '#0c4a6e'
+                        },
+                        'dark': {
+                            800: '#1e293b',
+                            900: '#0f172a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+        }
+        .glow-effect {
+            box-shadow: 0 0 30px rgba(14, 165, 233, 0.3);
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body class="font-sans gradient-bg min-h-screen text-white">
+    <!-- Navigation -->
+    <nav class="glass-effect fixed w-full top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl flex items-center justify-center glow-effect">
+                        <span class="text-xl font-bold">🏥</span>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                            NPHIES-AI
+                        </h1>
+                        <p class="text-xs text-gray-400 font-mono">Healthcare Intelligence v3.0</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/login" class="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors">
+                        Sign In
+                    </a>
+                    <a href="/dashboard" class="px-6 py-2 bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg text-sm font-semibold hover:from-primary-600 hover:to-primary-700 transition-all glow-effect">
+                        Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 px-6">
+        <div class="max-w-7xl mx-auto text-center">
+            <div class="animate-float mb-8">
+                <div class="w-24 h-24 bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl mx-auto flex items-center justify-center glow-effect">
+                    <span class="text-4xl">🚀</span>
+                </div>
+            </div>
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
+                Advanced Healthcare
+                <span class="block bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
+                    AI Platform
+                </span>
+            </h1>
+            <p class="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
+                Empowering healthcare providers with cutting-edge AI technology, seamless NPHIES integration, 
+                and intelligent automation for superior patient care and operational excellence.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/dashboard" class="px-8 py-4 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl text-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all glow-effect">
+                    Launch Platform
+                </a>
+                <a href="/ai-assistant" class="px-8 py-4 glass-effect rounded-xl text-lg font-semibold hover:bg-white/10 transition-all">
+                    Try AI Assistant
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section class="py-20 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                    Powered by AWS AI Services
+                </h2>
+                <p class="text-gray-400 text-lg">8 integrated AI services for comprehensive healthcare intelligence</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="glass-effect rounded-2xl p-6 hover:bg-white/10 transition-all group">
+                    <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <span class="text-xl">🧠</span>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Amazon Bedrock</h3>
+                    <p class="text-gray-400 text-sm">Foundation models for advanced healthcare analysis</p>
+                </div>
+                
+                <div class="glass-effect rounded-2xl p-6 hover:bg-white/10 transition-all group">
+                    <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <span class="text-xl">🎯</span>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">SageMaker</h3>
+                    <p class="text-gray-400 text-sm">Custom ML models for healthcare predictions</p>
+                </div>
+                
+                <div class="glass-effect rounded-2xl p-6 hover:bg-white/10 transition-all group">
+                    <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <span class="text-xl">📄</span>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Textract</h3>
+                    <p class="text-gray-400 text-sm">Medical document processing and OCR</p>
+                </div>
+                
+                <div class="glass-effect rounded-2xl p-6 hover:bg-white/10 transition-all group">
+                    <div class="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <span class="text-xl">🔍</span>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Kendra</h3>
+                    <p class="text-gray-400 text-sm">Intelligent healthcare knowledge search</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="py-20 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="glass-effect rounded-3xl p-12">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
+                    <div>
+                        <div class="text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent mb-2">
+                            98.5%
+                        </div>
+                        <div class="text-gray-400">Success Rate</div>
+                    </div>
+                    <div>
+                        <div class="text-4xl font-bold bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent mb-2">
+                            0.8s
+                        </div>
+                        <div class="text-gray-400">Response Time</div>
+                    </div>
+                    <div>
+                        <div class="text-4xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent mb-2">
+                            8
+                        </div>
+                        <div class="text-gray-400">AI Services</div>
+                    </div>
+                    <div>
+                        <div class="text-4xl font-bold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent mb-2">
+                            24/7
+                        </div>
+                        <div class="text-gray-400">Availability</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 px-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-4xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                Ready to Transform Healthcare?
+            </h2>
+            <p class="text-xl text-gray-300 mb-8">
+                Join the future of healthcare with AI-powered intelligence and seamless NPHIES integration.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/dashboard" class="px-8 py-4 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl text-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all glow-effect">
+                    Get Started Now
+                </a>
+                <a href="/health-services" class="px-8 py-4 glass-effect rounded-xl text-lg font-semibold hover:bg-white/10 transition-all">
+                    View Services
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-6 border-t border-white/10">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center space-x-3 mb-4 md:mb-0">
+                    <div class="w-8 h-8 bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
+                        <span class="text-sm">🏥</span>
+                    </div>
+                    <span class="font-semibold">NPHIES-AI Healthcare Platform</span>
+                </div>
+                <div class="flex items-center space-x-6 text-sm text-gray-400">
+                    <a href="/profile" class="hover:text-white transition-colors">Profile</a>
+                    <a href="/settings" class="hover:text-white transition-colors">Settings</a>
+                    <a href="/notifications" class="hover:text-white transition-colors">Notifications</a>
+                    <span class="font-mono">v3.0.0</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Add smooth scrolling and animations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Smooth scroll for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            // Add loading animation
+            document.body.style.opacity = '0';
+            setTimeout(() => {
+                document.body.style.transition = 'opacity 0.5s ease-in-out';
+                document.body.style.opacity = '1';
+            }, 100);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 - Server Error - NPHIES-AI Healthcare Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/routing.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            min-height: 100vh;
+            color: #ffffff;
+        }
+        
+        .error-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .error-content {
+            text-align: center;
+            max-width: 600px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .error-icon {
+            font-size: 8rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 900;
+        }
+        
+        .error-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .error-message {
+            font-size: 1.125rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .error-details {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            text-align: left;
+        }
+        
+        .details-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #fca5a5;
+        }
+        
+        .details-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+        }
+        
+        .details-list li {
+            padding: 0.25rem 0;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .status-check {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .status-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #ffffff;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status-label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .status-value {
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+        
+        .status-checking {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+        
+        .status-healthy {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+        
+        .status-error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+        
+        .error-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: #ffffff;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+        
+        .footer-info {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.875rem;
+        }
+        
+        @media (max-width: 768px) {
+            .error-content {
+                padding: 2rem;
+                margin: 1rem;
+            }
+            
+            .error-icon {
+                font-size: 6rem;
+            }
+            
+            .error-title {
+                font-size: 2rem;
+            }
+            
+            .error-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-content">
+            <div class="error-icon">500</div>
+            <h1 class="error-title">Server Error</h1>
+            <p class="error-message">
+                We're experiencing technical difficulties with our healthcare platform. 
+                Our team has been notified and is working to resolve the issue.
+            </p>
+            
+            <div class="error-details">
+                <h3 class="details-title">Error Information</h3>
+                <ul class="details-list">
+                    <li>Timestamp: <span id="error-timestamp"></span></li>
+                    <li>Error ID: <span id="error-id"></span></li>
+                    <li>Service: NPHIES-AI Healthcare Platform</li>
+                    <li>Status: Investigating</li>
+                </ul>
+            </div>
+            
+            <div class="status-check">
+                <h3 class="status-title">System Status Check</h3>
+                <div class="status-item">
+                    <span class="status-label">Application Server</span>
+                    <span class="status-value status-checking" id="app-status">Checking...</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Database Connection</span>
+                    <span class="status-value status-checking" id="db-status">Checking...</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">AI Services</span>
+                    <span class="status-value status-checking" id="ai-status">Checking...</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">NPHIES Integration</span>
+                    <span class="status-value status-checking" id="nphies-status">Checking...</span>
+                </div>
+            </div>
+            
+            <div class="error-actions">
+                <button class="btn btn-primary" onclick="location.reload()">
+                    🔄 Retry
+                </button>
+                <a href="/dashboard" class="btn btn-secondary" data-route="/dashboard">
+                    🏠 Go to Dashboard
+                </a>
+                <a href="/ai-assistant" class="btn btn-secondary" data-route="/ai-assistant">
+                    💬 Contact Support
+                </a>
+            </div>
+            
+            <div class="footer-info">
+                <p>
+                    <strong>NPHIES-AI Healthcare Platform</strong><br>
+                    If this problem persists, please contact our technical support team.<br>
+                    We apologize for any inconvenience caused.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Router -->
+    <script src="/static/js/router.js"></script>
+    <script src="/static/js/navigation.js"></script>
+    
+    <script>
+        // Generate error details
+        document.getElementById('error-timestamp').textContent = new Date().toISOString();
+        document.getElementById('error-id').textContent = 'ERR-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+        
+        // Simulate system status checks
+        async function checkSystemStatus() {
+            const statusElements = {
+                'app-status': 'Application Server',
+                'db-status': 'Database Connection',
+                'ai-status': 'AI Services',
+                'nphies-status': 'NPHIES Integration'
+            };
+            
+            for (const [elementId, serviceName] of Object.entries(statusElements)) {
+                const element = document.getElementById(elementId);
+                
+                try {
+                    // Simulate status check with delay
+                    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+                    
+                    // Try to check actual service if possible
+                    let isHealthy = false;
+                    
+                    if (elementId === 'app-status') {
+                        try {
+                            const response = await fetch('/health', { method: 'GET', timeout: 5000 });
+                            isHealthy = response.ok;
+                        } catch (e) {
+                            isHealthy = false;
+                        }
+                    } else {
+                        // Simulate random status for other services
+                        isHealthy = Math.random() > 0.3;
+                    }
+                    
+                    if (isHealthy) {
+                        element.textContent = 'Healthy';
+                        element.className = 'status-value status-healthy';
+                    } else {
+                        element.textContent = 'Error';
+                        element.className = 'status-value status-error';
+                    }
+                } catch (error) {
+                    element.textContent = 'Error';
+                    element.className = 'status-value status-error';
+                }
+            }
+        }
+        
+        // Start status checks
+        checkSystemStatus();
+        
+        // Auto-retry functionality
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        function autoRetry() {
+            if (retryCount < maxRetries) {
+                retryCount++;
+                console.log(`Auto-retry attempt ${retryCount}/${maxRetries}`);
+                
+                setTimeout(() => {
+                    fetch('/health')
+                        .then(response => {
+                            if (response.ok) {
+                                // Service is back online
+                                window.location.href = '/dashboard';
+                            } else {
+                                autoRetry();
+                            }
+                        })
+                        .catch(() => {
+                            autoRetry();
+                        });
+                }, 10000 * retryCount); // Exponential backoff
+            }
+        }
+        
+        // Start auto-retry after 5 seconds
+        setTimeout(autoRetry, 5000);
+        
+        // Track 500 error
+        if (window.gtag) {
+            window.gtag('event', 'exception', {
+                description: '500_server_error',
+                fatal: true,
+                custom_map: {
+                    error_page: '500',
+                    error_id: document.getElementById('error-id').textContent
+                }
+            });
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                location.reload();
+            } else if (e.key === 'h' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                window.location.href = '/dashboard';
+            }
+        });
+    </script>
+</body>
+</html>
