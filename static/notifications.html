@@ -13,7 +13,7 @@
 </head>
 <body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white min-h-screen">
     <nav class="glass-effect border-b border-white/10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="container">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-4">
                     <div class="text-xl font-bold">🏥 NPHIES-AI</div>
@@ -34,7 +34,7 @@
                 <h1 class="text-3xl font-bold mb-2">Notifications</h1>
                 <p class="text-gray-400">Stay updated with your healthcare operations</p>
             </div>
-            <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-sm">
+            <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-sm touch-target">
                 Mark All Read
             </button>
         </div>
@@ -51,7 +51,7 @@
                         <p class="text-gray-300 mb-2">Claim #12345 for patient John Doe has been approved by the insurance provider.</p>
                         <p class="text-sm text-gray-500">2 minutes ago</p>
                     </div>
-                    <button class="text-gray-400 hover:text-white">×</button>
+                    <button class="text-gray-400 hover:text-white touch-target">×</button>
                 </div>
             </div>
 
@@ -65,7 +65,7 @@
                         <p class="text-gray-300 mb-2">Eligibility verification completed for patient Jane Smith. Coverage is active.</p>
                         <p class="text-sm text-gray-500">15 minutes ago</p>
                     </div>
-                    <button class="text-gray-400 hover:text-white">×</button>
+                    <button class="text-gray-400 hover:text-white touch-target">×</button>
                 </div>
             </div>
 
@@ -79,7 +79,7 @@
                         <p class="text-gray-300 mb-2">AI analysis for medical document processing has been completed. View insights now.</p>
                         <p class="text-sm text-gray-500">1 hour ago</p>
                     </div>
-                    <button class="text-gray-400 hover:text-white">×</button>
+                    <button class="text-gray-400 hover:text-white touch-target">×</button>
                 </div>
             </div>
 
@@ -93,7 +93,7 @@
                         <p class="text-gray-300 mb-2">Pre-authorization request #PA002 is still pending review. Expected response in 24 hours.</p>
                         <p class="text-sm text-gray-500">3 hours ago</p>
                     </div>
-                    <button class="text-gray-400 hover:text-white">×</button>
+                    <button class="text-gray-400 hover:text-white touch-target">×</button>
                 </div>
             </div>
 
@@ -107,7 +107,7 @@
                         <p class="text-gray-300 mb-2">Claim #12343 has been rejected. Reason: Insufficient documentation. Please review and resubmit.</p>
                         <p class="text-sm text-gray-500">5 hours ago</p>
                     </div>
-                    <button class="text-gray-400 hover:text-white">×</button>
+                    <button class="text-gray-400 hover:text-white touch-target">×</button>
                 </div>
             </div>
 
@@ -121,13 +121,13 @@
                         <p class="text-gray-300 mb-2">NPHIES-AI platform has been updated to version 3.1.0 with enhanced security features.</p>
                         <p class="text-sm text-gray-500">1 day ago</p>
                     </div>
-                    <button class="text-gray-400 hover:text-white">×</button>
+                    <button class="text-gray-400 hover:text-white touch-target">×</button>
                 </div>
             </div>
         </div>
 
         <div class="mt-8 text-center">
-            <button class="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors">
+            <button class="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors touch-target">
                 Load More Notifications
             </button>
         </div>
@@ -139,5 +139,7 @@
     </main>
 
     <script src="/static/js/navigation.js"></script>
+    <script src="/static/js/footer-navigation.js"></script>
+    <script src="/static/js/arrow-navigation.js"></script>
 </body>
 </html>

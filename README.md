@@ -67,7 +67,10 @@ cd nphies-ai-healthcare-platform
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the application
+# Configure auth secrets and run the application
+export JWT_SECRET=dev-secret
+export SERVICE_ACCOUNT_USERNAME=nphies_service
+export SERVICE_ACCOUNT_PASSWORD=nphies-dev-password
 python main.py
 ```
 
@@ -80,6 +83,16 @@ docker build -t nphies-ai:latest .
 docker run -p 8000:8000 nphies-ai:latest
 ```
 
+### Obtain a Demo Access Token
+
+```bash
+curl -X POST http://localhost:8000/auth/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d 'username=nphies_service&password=nphies-dev-password'
+```
+
+Use the returned `access_token` as a `Bearer` token when calling protected endpoints such as `/system/status`, `/chat`, and `/nphies/claim`.
+
 ### AWS ECS Deployment
 ```bash
 # Push to ECR
@@ -90,6 +103,18 @@ docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/brainsait-nphies-ai:lat
 # Update ECS service
 aws ecs update-service --cluster brainsait-nphies-cluster --service brainsait-nphies-service --force-new-deployment
 ```
+
+## 🤝 Contributor Guide
+
+- Review `AGENTS.md` for repository guidelines covering structure, commands, coding conventions, testing, and security expectations before opening pull requests.
+
+## 🔐 Authentication & Environment
+
+- Configure JWT settings before running the API: set `JWT_SECRET`, optional `JWT_ALGORITHM`, and `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`.
+- Provision a service account credential via `SERVICE_ACCOUNT_USERNAME` and either `SERVICE_ACCOUNT_PASSWORD_HASH` (bcrypt) or `SERVICE_ACCOUNT_PASSWORD` for local development.
+- Rate limiting defaults to `60` requests per minute; override with `API_RATE_LIMIT` and `API_RATE_LIMIT_WINDOW` as needed.
+- Front-end clients (static site, Next.js dashboard, Expo mobile) request tokens from `/auth/token` and store them in `localStorage`/`AsyncStorage` under `nphies_ai_access_token`.
+- Default demo credentials (`nphies_service` / `nphies-dev-password`) remain active until you override them; update or reset secrets before deploying beyond local environments.
 
 ## 📁 Project Structure
 

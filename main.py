@@ -3,33 +3,168 @@ BrainSAIT NPHIES-AI: Enhanced FastAPI server with Real-time AI capabilities
 Healthcare AI middleware for NPHIES integration with streaming responses
 """
 
-from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Deque
 import json
 import asyncio
 import uuid
-from datetime import datetime
+import random
+from datetime import datetime, timedelta
 import boto3
 from botocore.exceptions import ClientError
 
 import logging
 import time
 from contextlib import asynccontextmanager
+import os
+import secrets
+from collections import deque
+from pathlib import Path
+
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+from passlib.context import CryptContext
 
 # Enhanced logging configuration
+LOG_FILE_PATH = Path(os.getenv("LOG_FILE", "logs/nphies-ai.log"))
+LOG_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/app/logs/nphies-ai.log'),
+        logging.FileHandler(LOG_FILE_PATH),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
+
+# === Security & Authentication Configuration ===
+SECRET_KEY = os.getenv("JWT_SECRET", "change-me-in-production")
+ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+
+SERVICE_ACCOUNT_USERNAME = os.getenv("SERVICE_ACCOUNT_USERNAME", "nphies_service")
+SERVICE_ACCOUNT_PASSWORD_HASH = os.getenv("SERVICE_ACCOUNT_PASSWORD_HASH")
+SERVICE_ACCOUNT_PASSWORD = os.getenv("SERVICE_ACCOUNT_PASSWORD", "nphies-dev-password")
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+
+
+def verify_password(plain_password: str, hashed_password: Optional[str]) -> bool:
+    if hashed_password:
+        return pwd_context.verify(plain_password, hashed_password)
+    return secrets.compare_digest(plain_password, SERVICE_ACCOUNT_PASSWORD)
+
+
+def authenticate_user(username: str, password: str) -> bool:
+    if username != SERVICE_ACCOUNT_USERNAME:
+        return False
+    return verify_password(password, SERVICE_ACCOUNT_PASSWORD_HASH)
+
+
+def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class TokenData(BaseModel):
+    sub: Optional[str] = None
+    scopes: List[str] = []
+
+
+def decode_token(token: str) -> Dict[str, Any]:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        subject: Optional[str] = payload.get("sub")
+        if subject is None:
+            raise credentials_exception
+        return {"sub": subject, "scopes": payload.get("scopes", [])}
+    except JWTError:
+        raise credentials_exception
+
+
+async def get_current_token(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
+    return decode_token(token)
+
+
+class SimpleRateLimiter:
+    def __init__(self, limit: int, window_seconds: int):
+        self.limit = limit
+        self.window_seconds = window_seconds
+        self.calls: Dict[str, Deque[float]] = {}
+        self.lock = asyncio.Lock()
+
+    async def hit(self, key: str):
+        now = time.monotonic()
+        async with self.lock:
+            bucket = self.calls.setdefault(key, deque())
+            while bucket and now - bucket[0] > self.window_seconds:
+                bucket.popleft()
+            if len(bucket) >= self.limit:
+                raise HTTPException(status_code=429, detail="Rate limit exceeded")
+            bucket.append(now)
+
+
+rate_limiter = SimpleRateLimiter(
+    limit=int(os.getenv("API_RATE_LIMIT", "60")),
+    window_seconds=int(os.getenv("API_RATE_LIMIT_WINDOW", "60"))
+)
+
+
+async def secure_endpoint(
+    request: Request,
+    token_data: Dict[str, Any] = Depends(get_current_token),
+) -> Dict[str, Any]:
+    key = token_data.get("sub") or (request.client.host if request.client else "anonymous")
+    await rate_limiter.hit(key)
+    request.state.user = token_data
+    return token_data
+
+
+async def secure_websocket(websocket: WebSocket) -> Dict[str, Any]:
+    token = websocket.query_params.get("token")
+    if not token:
+        auth_header = websocket.headers.get("Authorization")
+        if auth_header and auth_header.lower().startswith("bearer "):
+            token = auth_header.split(" ", 1)[1]
+
+    if not token:
+        await websocket.close(code=4401)
+        raise WebSocketDisconnect()
+
+    try:
+        token_data = decode_token(token)
+    except HTTPException:
+        await websocket.close(code=4401)
+        raise WebSocketDisconnect()
+
+    key = token_data.get("sub") or (websocket.client.host if websocket.client else "anonymous")
+    try:
+        await rate_limiter.hit(key)
+    except HTTPException:
+        await websocket.close(code=4429)
+        raise WebSocketDisconnect()
+
+    websocket.scope.setdefault("state", {})["user"] = token_data
+    return token_data
 
 # Performance monitoring
 performance_metrics = {
@@ -95,6 +230,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# Authentication token endpoint
+@app.post("/auth/token", response_model=TokenResponse)
+async def login_for_access_token(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+):
+    if not authenticate_user(form_data.username, form_data.password):
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+
+    key = form_data.username or (request.client.host if request.client else "anonymous")
+    await rate_limiter.hit(key)
+
+    access_token = create_access_token({"sub": form_data.username})
+    return TokenResponse(access_token=access_token)
+
 # Enhanced error handling middleware
 @app.middleware("http")
 async def error_handling_middleware(request: Request, call_next):
@@ -102,8 +253,16 @@ async def error_handling_middleware(request: Request, call_next):
         response = await call_next(request)
         return response
     except Exception as e:
-        logger.error(f"Unhandled error in {request.url.path}: {str(e)}")
-        return {"error": "Internal server error", "status": 500, "timestamp": datetime.utcnow().isoformat()}
+        logger.error(f"Unhandled error in {request.url.path}: {str(e)}", exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "Internal server error",
+                "status": 500,
+                "timestamp": datetime.utcnow().isoformat(),
+                "path": request.url.path,
+            },
+        )
 
 # Enhanced logging setup
 logging.basicConfig(
@@ -519,7 +678,7 @@ async def health_check():
     }
 
 @app.get("/system/status")
-async def system_status():
+async def system_status(current_user: Dict[str, Any] = Depends(secure_endpoint)):
     """Comprehensive system status and diagnostics"""
     uptime = time.time() - performance_metrics["uptime_start"]
     
@@ -558,7 +717,10 @@ async def system_status():
 
 # Enhanced Chat endpoint with real-time streaming
 @app.post("/chat")
-async def chat_endpoint(message: ChatMessage):
+async def chat_endpoint(
+    message: ChatMessage,
+    current_user: Dict[str, Any] = Depends(secure_endpoint),
+):
     """Enhanced chat endpoint with healthcare AI and real-time streaming"""
     
     async def generate_response():
@@ -594,14 +756,23 @@ async def chat_endpoint(message: ChatMessage):
     
     return StreamingResponse(
         generate_response(),
-        media_type="text/plain",
-        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"}
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
     )
 
 # WebSocket endpoint for real-time chat
 @app.websocket("/ws/chat")
 async def websocket_chat(websocket: WebSocket):
     """Real-time WebSocket chat endpoint"""
+    try:
+        token_data = await secure_websocket(websocket)
+    except WebSocketDisconnect:
+        return
+
     await manager.connect(websocket)
     try:
         while True:
@@ -616,7 +787,8 @@ async def websocket_chat(websocket: WebSocket):
                 "type": "ai_response",
                 "message": response,
                 "timestamp": datetime.utcnow().isoformat(),
-                "context": "healthcare"
+                "context": "healthcare",
+                "user": token_data.get("sub")
             }), websocket)
             
     except WebSocketDisconnect:
@@ -624,7 +796,10 @@ async def websocket_chat(websocket: WebSocket):
 
 # Enhanced NPHIES integration endpoint with validation
 @app.post("/nphies/claim")
-async def process_claim(claim_data: ClaimSubmission):
+async def process_claim(
+    claim_data: ClaimSubmission,
+    current_user: Dict[str, Any] = Depends(secure_endpoint),
+):
     """Enhanced NPHIES claim processing with validation and audit logging"""
     try:
         claim_id = str(uuid.uuid4())
@@ -670,7 +845,10 @@ async def process_claim(claim_data: ClaimSubmission):
 
 # Advanced AI Analytics endpoint with validation
 @app.post("/ai/bedrock-analyze")
-async def bedrock_analyze(request: AIAnalysisRequest):
+async def bedrock_analyze(
+    request: AIAnalysisRequest,
+    current_user: Dict[str, Any] = Depends(secure_endpoint),
+):
     """Enhanced AI analysis using Amazon Bedrock with input validation"""
     try:
         # Input sanitization for security
@@ -715,7 +893,10 @@ async def bedrock_analyze(request: AIAnalysisRequest):
         }
 
 @app.post("/ai/sagemaker-predict")
-async def sagemaker_predict(request: Dict[str, Any]):
+async def sagemaker_predict(
+    request: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(secure_endpoint),
+):
     """Custom ML predictions using Amazon SageMaker endpoints"""
     try:
         return {
@@ -741,7 +922,10 @@ async def sagemaker_predict(request: Dict[str, Any]):
         return {"error": "SageMaker prediction failed", "fallback": True}
 
 @app.post("/ai/textract-analyze")
-async def textract_analyze(request: Dict[str, Any]):
+async def textract_analyze(
+    request: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(secure_endpoint),
+):
     """Document analysis using Amazon Textract"""
     try:
         return {
@@ -765,7 +949,10 @@ async def textract_analyze(request: Dict[str, Any]):
         return {"error": "Document analysis failed", "fallback": True}
 
 @app.post("/ai/personalize-recommend")
-async def personalize_recommend(request: Dict[str, Any]):
+async def personalize_recommend(
+    request: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(secure_endpoint),
+):
     """Personalized recommendations using Amazon Personalize"""
     try:
         return {
@@ -792,7 +979,10 @@ async def personalize_recommend(request: Dict[str, Any]):
         return {"error": "Personalization failed", "fallback": True}
 
 @app.post("/ai/kendra-search")
-async def kendra_search(request: Dict[str, Any]):
+async def kendra_search(
+    request: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(secure_endpoint),
+):
     """Intelligent healthcare search using Amazon Kendra"""
     try:
         query = request.get('query', '')
@@ -823,7 +1013,7 @@ async def kendra_search(request: Dict[str, Any]):
         return {"error": "Search failed", "fallback": True}
 
 @app.get("/ai/analytics")
-async def ai_analytics():
+async def ai_analytics(current_user: Dict[str, Any] = Depends(secure_endpoint)):
     """Advanced AI system analytics and performance metrics"""
     """Advanced AI system analytics and performance metrics"""
     return {
@@ -859,7 +1049,7 @@ async def health_services_dashboard():
 
 # Advanced AI Monitoring endpoint
 @app.get("/ai/monitoring")
-async def ai_monitoring():
+async def ai_monitoring(current_user: Dict[str, Any] = Depends(secure_endpoint)):
     """Real-time AI system monitoring data"""
     return {
         "system_health": {
@@ -886,7 +1076,10 @@ async def ai_monitoring():
 
 # Advanced AI Prediction Engine
 @app.post("/ai/predict")
-async def ai_predict(request: Dict[str, Any]):
+async def ai_predict(
+    request: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(secure_endpoint),
+):
     """Advanced AI prediction engine for healthcare outcomes"""
     try:
         prediction_type = request.get("type", "general")
@@ -928,7 +1121,10 @@ async def ai_predict(request: Dict[str, Any]):
 
 # AI Automation Engine
 @app.post("/ai/automate")
-async def ai_automate(request: Dict[str, Any]):
+async def ai_automate(
+    request: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(secure_endpoint),
+):
     """AI-powered automation for healthcare workflows"""
     try:
         task_type = request.get("task", "document_processing")
@@ -972,7 +1168,10 @@ async def ai_automate(request: Dict[str, Any]):
 
 # AI Learning and Adaptation
 @app.post("/ai/learn")
-async def ai_learn(request: Dict[str, Any]):
+async def ai_learn(
+    request: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(secure_endpoint),
+):
     """AI continuous learning from user interactions"""
     try:
         interaction_data = request.get("interaction", {})
@@ -1001,7 +1200,7 @@ async def ai_learn(request: Dict[str, Any]):
 
 # AI Smart Recommendations Engine
 @app.get("/ai/recommendations")
-async def ai_recommendations():
+async def ai_recommendations(current_user: Dict[str, Any] = Depends(secure_endpoint)):
     """AI-powered smart recommendations for healthcare optimization"""
     recommendations = [
         {
@@ -1052,7 +1251,10 @@ async def ai_recommendations():
 
 # AI Performance Optimizer
 @app.post("/ai/optimize")
-async def ai_optimize(request: Dict[str, Any]):
+async def ai_optimize(
+    request: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(secure_endpoint),
+):
     """AI-powered performance optimization"""
     optimization_type = request.get("type", "general")
     
@@ -1095,7 +1297,10 @@ async def ai_optimize(request: Dict[str, Any]):
 # AWS Health Services Integration Endpoints
 
 @app.post("/health-services/analyze-text")
-async def analyze_medical_text(request: Dict[str, Any]):
+async def analyze_medical_text(
+    request: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(secure_endpoint),
+):
     """Analyze medical text using AWS Comprehend Medical"""
     try:
         text = request.get("text", "")
@@ -1141,7 +1346,7 @@ async def analyze_medical_text(request: Dict[str, Any]):
         raise HTTPException(status_code=500, detail="Medical text analysis failed")
 
 @app.get("/health-services/healthlake-status")
-async def healthlake_status():
+async def healthlake_status(current_user: Dict[str, Any] = Depends(secure_endpoint)):
     """Get AWS HealthLake datastore status"""
     try:
         return {
@@ -1161,7 +1366,10 @@ async def healthlake_status():
         raise HTTPException(status_code=500, detail="HealthLake status check failed")
 
 @app.post("/health-services/transcribe")
-async def transcribe_medical_audio(request: Dict[str, Any]):
+async def transcribe_medical_audio(
+    request: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(secure_endpoint),
+):
     """Medical audio transcription demo"""
     try:
         return {
@@ -1180,6 +1388,11 @@ async def transcribe_medical_audio(request: Dict[str, Any]):
 @app.websocket("/ws/monitoring")
 async def websocket_monitoring(websocket: WebSocket):
     """Real-time AI monitoring WebSocket"""
+    try:
+        token_data = await secure_websocket(websocket)
+    except WebSocketDisconnect:
+        return
+
     await manager.connect(websocket)
     try:
         while True:
@@ -1193,7 +1406,8 @@ async def websocket_monitoring(websocket: WebSocket):
                     "automation_tasks": random.randint(2, 8),
                     "learning_updates": random.randint(1, 3),
                     "timestamp": datetime.utcnow().isoformat()
-                }
+                },
+                "user": token_data.get("sub")
             }
             await manager.send_personal_message(json.dumps(monitoring_data), websocket)
             await asyncio.sleep(3)

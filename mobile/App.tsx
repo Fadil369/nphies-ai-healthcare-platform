@@ -1,11 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, Alert, I18nManager } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, Alert, I18nManager, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AGUIEvent {
-  type: 'session_start' | 'agent_thinking' | 'agent_response' | 'tool_call_start' | 'tool_call_end' | 'state_delta' | 'error' | 'complete';
+  type:
+    | 'session_start'
+    | 'agent_thinking'
+    | 'agent_response'
+    | 'thinking'
+    | 'partial_response'
+    | 'final_response'
+    | 'session_end'
+    | 'tool_call_start'
+    | 'tool_call_end'
+    | 'state_delta'
+    | 'error'
+    | 'complete';
   data: any;
 }
 
@@ -18,7 +30,8 @@ interface Message {
   imageUri?: string;
 }
 
-const API_URL = 'http://brainsait-nphies-alb-1821626782.us-east-1.elb.amazonaws.com';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+const TOKEN_STORAGE_KEY = 'nphies_ai_access_token';
 
 export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -27,11 +40,18 @@ export default function App() {
   const [isRTL, setIsRTL] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const lastAgentMessageIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     I18nManager.forceRTL(isRTL);
     loadLanguagePreference();
+    loadStoredToken();
   }, []);
 
   const loadLanguagePreference = async () => {
@@ -46,6 +66,17 @@ export default function App() {
     }
   };
 
+  const loadStoredToken = async () => {
+    try {
+      const storedToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
+      if (storedToken) {
+        setAuthToken(storedToken);
+      }
+    } catch (error) {
+      console.log('Error loading auth token:', error);
+    }
+  };
+
   const toggleLanguage = async () => {
     const newLang = language === 'ar' ? 'en' : 'ar';
     const newRTL = newLang === 'ar';
@@ -54,25 +85,93 @@ export default function App() {
     await AsyncStorage.setItem('language', newLang);
   };
 
+  const appendMessage = (message: Message) => {
+    setMessages(prev => [...prev, message]);
+  };
+
+  const updateMessageById = (id: string, updates: Partial<Message>) => {
+    setMessages(prev => prev.map(msg => (msg.id === id ? { ...msg, ...updates } : msg)));
+  };
+
+  const handleLogin = async () => {
+    if (!username || !password) {
+      setAuthError(language === 'ar' ? 'يرجى إدخال اسم المستخدم وكلمة المرور.' : 'Please enter username and password.');
+      return;
+    }
+
+    try {
+      setAuthError(null);
+      setIsAuthenticating(true);
+
+      const body = new URLSearchParams();
+      body.append('username', username);
+      body.append('password', password);
+
+      const response = await fetch(`${API_URL}/auth/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body
+      });
+
+      if (!response.ok) {
+        throw new Error(language === 'ar' ? 'بيانات اعتماد غير صحيحة.' : 'Invalid credentials.');
+      }
+
+      const data = await response.json();
+      if (!data.access_token) {
+        throw new Error(language === 'ar' ? 'استجابة غير متوقعة من الخادم.' : 'Unexpected server response.');
+      }
+
+      await AsyncStorage.setItem(TOKEN_STORAGE_KEY, data.access_token);
+      setAuthToken(data.access_token);
+      setAuthError(null);
+    } catch (error: any) {
+      setAuthError(error.message || (language === 'ar' ? 'فشل تسجيل الدخول.' : 'Login failed.'));
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
+    setAuthToken(null);
+    setSessionId('');
+    setMessages([]);
+  };
+
   const sendMessage = async (text: string, imageUri?: string) => {
     if (!text.trim() && !imageUri) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: text,
-      timestamp: new Date(),
-      imageUri
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInputText('');
-    setIsLoading(true);
-
     try {
+      const tokenToUse = authToken || (await AsyncStorage.getItem(TOKEN_STORAGE_KEY));
+
+      if (!tokenToUse) {
+        Alert.alert(language === 'ar' ? 'يتطلب تسجيل الدخول' : 'Authentication required', language === 'ar' ? 'يرجى تسجيل الدخول قبل استخدام المساعد.' : 'Please sign in before using the assistant.');
+        setIsLoading(false);
+        return;
+      }
+
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        type: 'user',
+        content: text,
+        timestamp: new Date(),
+        imageUri
+      };
+
+      appendMessage(userMessage);
+      setInputText('');
+      setIsLoading(true);
+
       const response = await fetch(`${API_URL}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream',
+          Authorization: `Bearer ${tokenToUse}`
+        },
         body: JSON.stringify({
           message: text,
           language,
@@ -81,34 +180,41 @@ export default function App() {
         })
       });
 
-      if (!response.body) throw new Error('No response body');
+      handleAGUIEvent({ type: 'thinking', data: { message: language === 'ar' ? 'جارٍ التحليل…' : 'Analyzing your query…' } });
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+      let rawStream = '';
+      if (response.body && (response.body as any).getReader) {
+        const decoder = new TextDecoder();
+        const reader = (response.body as any).getReader();
+        let chunk = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunk += decoder.decode(value, { stream: true });
+        }
+        rawStream = chunk;
+      } else {
+        rawStream = await response.text();
+      }
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const event: AGUIEvent = JSON.parse(line.slice(6));
-              handleAGUIEvent(event);
-            } catch (e) {
-              console.log('Error parsing SSE event:', e);
-            }
-          }
+      const events = rawStream.split('\n\n').filter(Boolean);
+      for (const raw of events) {
+        if (!raw.startsWith('data:')) continue;
+        const payloadRaw = raw.replace(/^data:\s*/, '');
+        if (!payloadRaw) continue;
+        try {
+          const event: AGUIEvent = JSON.parse(payloadRaw);
+          handleAGUIEvent(event);
+        } catch (error) {
+          console.log('Error parsing SSE event:', error);
         }
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      Alert.alert('خطأ', 'فشل في إرسال الرسالة');
+      Alert.alert(
+        language === 'ar' ? 'خطأ' : 'Error',
+        language === 'ar' ? 'فشل في إرسال الرسالة.' : 'Failed to send the message.'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -116,26 +222,78 @@ export default function App() {
 
   const handleAGUIEvent = (event: AGUIEvent) => {
     switch (event.type) {
-      case 'session_start':
+      case 'session_start': {
         setSessionId(event.data.session_id);
         break;
+      }
       case 'agent_thinking':
-        setMessages(prev => [...prev, {
+      case 'thinking': {
+        const messageId = Date.now().toString();
+        lastAgentMessageIdRef.current = messageId;
+        appendMessage({
+          id: messageId,
+          type: 'system',
+          content: event.data?.message || (language === 'ar' ? 'جارٍ المعالجة…' : 'Analyzing...'),
+          contentAr: event.data?.message_ar,
+          timestamp: new Date()
+        });
+        break;
+      }
+      case 'partial_response': {
+        const targetId = lastAgentMessageIdRef.current;
+        if (!targetId) {
+          const newId = Date.now().toString();
+          lastAgentMessageIdRef.current = newId;
+          appendMessage({
+            id: newId,
+            type: 'agent',
+            content: event.data?.text || '',
+            timestamp: new Date()
+          });
+        } else {
+          updateMessageById(targetId, {
+            type: 'agent',
+            content: event.data?.text || ''
+          });
+        }
+        break;
+      }
+      case 'agent_response':
+      case 'final_response': {
+        const targetId = lastAgentMessageIdRef.current;
+        if (!targetId) {
+          const newId = Date.now().toString();
+          appendMessage({
+            id: newId,
+            type: 'agent',
+            content: event.data?.message || event.data?.text || '',
+            contentAr: event.data?.message_ar,
+            timestamp: new Date()
+          });
+        } else {
+          updateMessageById(targetId, {
+            type: 'agent',
+            content: event.data?.message || event.data?.text || '',
+            contentAr: event.data?.message_ar
+          });
+        }
+        lastAgentMessageIdRef.current = null;
+        break;
+      }
+      case 'session_end': {
+        lastAgentMessageIdRef.current = null;
+        break;
+      }
+      case 'error': {
+        appendMessage({
           id: Date.now().toString(),
           type: 'system',
-          content: event.data.message,
-          contentAr: 'جاري المعالجة...',
+          content: event.data?.message || (language === 'ar' ? 'حدث خطأ في الطلب.' : 'An error occurred.'),
           timestamp: new Date()
-        }]);
+        });
         break;
-      case 'agent_response':
-        setMessages(prev => [...prev, {
-          id: Date.now().toString(),
-          type: 'agent',
-          content: event.data.message,
-          contentAr: event.data.message_ar,
-          timestamp: new Date()
-        }]);
+      }
+      default:
         break;
     }
   };
@@ -167,6 +325,90 @@ export default function App() {
     </View>
   );
 
+  if (!authToken) {
+    return (
+      <LinearGradient
+        colors={['#1a365d', '#2b6cb8', '#0ea5e9']}
+        style={{ flex: 1 }}
+      >
+        <View style={{ flex: 1, paddingTop: 80, paddingHorizontal: 24 }}>
+          <View style={{ marginBottom: 24 }}>
+            <Text style={{ color: 'white', fontSize: 28, fontWeight: 'bold', textAlign: isRTL ? 'right' : 'left' }}>
+              {language === 'ar' ? 'تسجيل الدخول إلى منصة نفيس' : 'Sign in to NPHIES Platform'}
+            </Text>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', marginTop: 8, textAlign: isRTL ? 'right' : 'left' }}>
+              {language === 'ar' ? 'استخدم بيانات الاعتماد المصرح بها للوصول إلى المساعد الذكي.' : 'Use your authorized credentials to access the intelligent assistant.'}
+            </Text>
+          </View>
+
+          <GlassContainer>
+            <View style={{ gap: 12 }}>
+              <Text style={{ color: 'white', fontSize: 16, fontWeight: '600', textAlign: isRTL ? 'right' : 'left' }}>
+                {language === 'ar' ? 'بيانات الاعتماد' : 'Credentials'}
+              </Text>
+              <TextInput
+                value={username}
+                onChangeText={setUsername}
+                placeholder={language === 'ar' ? 'اسم المستخدم أو معرف المزود' : 'Username or Provider ID'}
+                placeholderTextColor="rgba(255,255,255,0.5)"
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  borderRadius: 12,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  color: 'white',
+                  textAlign: isRTL ? 'right' : 'left'
+                }}
+              />
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                placeholder={language === 'ar' ? 'كلمة المرور' : 'Password'}
+                placeholderTextColor="rgba(255,255,255,0.5)"
+                secureTextEntry
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  borderRadius: 12,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  color: 'white',
+                  textAlign: isRTL ? 'right' : 'left'
+                }}
+              />
+
+              {authError ? (
+                <Text style={{ color: '#f87171', fontSize: 14, textAlign: isRTL ? 'right' : 'left' }}>{authError}</Text>
+              ) : null}
+
+              <TouchableOpacity
+                onPress={handleLogin}
+                style={{
+                  backgroundColor: '#2b6cb8',
+                  paddingVertical: 14,
+                  borderRadius: 12,
+                  alignItems: 'center'
+                }}
+                disabled={isAuthenticating}
+              >
+                {isAuthenticating ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text style={{ color: 'white', fontWeight: 'bold' }}>
+                    {language === 'ar' ? 'تسجيل الدخول' : 'Sign In'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={toggleLanguage} style={{ marginTop: 12, alignSelf: isRTL ? 'flex-start' : 'flex-end' }}>
+                <Text style={{ color: 'rgba(255,255,255,0.7)' }}>{language === 'ar' ? 'التبديل إلى الإنجليزية' : 'Switch to Arabic'}</Text>
+              </TouchableOpacity>
+            </View>
+          </GlassContainer>
+        </View>
+      </LinearGradient>
+    );
+  }
+
   return (
     <LinearGradient
       colors={['#1a365d', '#2b6cb8', '#0ea5e9']}
@@ -179,9 +421,14 @@ export default function App() {
             <Text style={{ color: 'white', fontSize: 20, fontWeight: 'bold' }}>
               {language === 'ar' ? 'برين سايت - نفيس الذكي' : 'BrainSAIT NPHIES-AI'}
             </Text>
-            <TouchableOpacity onPress={toggleLanguage} style={{ padding: 8, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8 }}>
-              <Text style={{ color: 'white', fontWeight: 'bold' }}>{language.toUpperCase()}</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }}>
+              <TouchableOpacity onPress={toggleLanguage} style={{ padding: 8, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8 }}>
+                <Text style={{ color: 'white', fontWeight: 'bold' }}>{language.toUpperCase()}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleLogout} style={{ paddingVertical: 8, paddingHorizontal: 12, backgroundColor: 'rgba(248,113,113,0.3)', borderRadius: 8 }}>
+                <Text style={{ color: '#fee2e2', fontWeight: '600' }}>{language === 'ar' ? 'تسجيل الخروج' : 'Logout'}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </GlassContainer>
 

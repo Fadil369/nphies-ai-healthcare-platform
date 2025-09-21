@@ -43,6 +43,8 @@
                     Sign In
                 </button>
             </form>
+
+            <p id="login-error" class="mt-4 text-sm text-red-400 hidden"></p>
             
             <div class="mt-6 text-center">
                 <p class="text-sm text-gray-400">
@@ -57,8 +59,8 @@
                 <h3 class="font-semibold mb-2">Demo Access</h3>
                 <p class="text-sm text-gray-400 mb-3">Use these credentials for demonstration:</p>
                 <div class="text-sm space-y-1">
-                    <p><strong>Provider:</strong> demo@hospital.sa</p>
-                    <p><strong>Password:</strong> demo123</p>
+                    <p><strong>Username:</strong> nphies_service</p>
+                    <p><strong>Password:</strong> nphies-dev-password</p>
                 </div>
             </div>
         </div>
@@ -71,12 +73,60 @@
     </div>
 
     <script src="/static/js/navigation.js"></script>
+    <script src="/static/js/footer-navigation.js"></script>
+    <script src="/static/js/arrow-navigation.js"></script>
     <script>
-        document.getElementById('login-form').addEventListener('submit', (e) => {
+        const loginForm = document.getElementById('login-form');
+        const errorBanner = document.getElementById('login-error');
+
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            // Demo login - redirect to dashboard
-            window.navigate('/dashboard');
+            errorBanner.classList.add('hidden');
+            const formData = new FormData(loginForm);
+            const username = (formData.get('username') || '').trim();
+            const password = (formData.get('password') || '').trim();
+
+            if (!username || !password) {
+                showError('Please provide both username and password.');
+                return;
+            }
+
+            try {
+                const payload = new URLSearchParams();
+                payload.set('username', username);
+                payload.set('password', password);
+
+                const response = await fetch('/auth/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: payload
+                });
+
+                if (!response.ok) {
+                    throw new Error('Invalid credentials.');
+                }
+
+                const data = await response.json();
+                if (!data.access_token) {
+                    throw new Error('Unexpected response from server.');
+                }
+
+                if (window.Auth) {
+                    window.Auth.saveToken(data.access_token);
+                }
+
+                window.location.replace('/dashboard');
+            } catch (error) {
+                showError(error.message || 'Unable to sign in. Please try again.');
+            }
         });
+
+        function showError(message) {
+            errorBanner.textContent = message;
+            errorBanner.classList.remove('hidden');
+        }
     </script>
 </body>
 </html>
