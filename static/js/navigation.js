@@ -3,6 +3,119 @@
  * Fixes routing issues and provides smooth SPA navigation
  */
 
+const Auth = (() => {
+    const STORAGE_KEY = 'nphies_ai_access_token';
+
+    function decode(token) {
+        try {
+            const payloadPart = token.split('.')[1];
+            if (!payloadPart) return null;
+            const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+            const padded = normalized + '='.repeat((4 - normalized.length % 4) % 4);
+            const decoded = atob(padded);
+            return JSON.parse(decoded);
+        } catch (error) {
+            console.warn('Failed to decode token payload', error);
+            return null;
+        }
+    }
+
+    function isExpired(token) {
+        const payload = decode(token);
+        if (!payload || !payload.exp) return false;
+        return payload.exp * 1000 <= Date.now() - 10_000; // allow small leeway
+    }
+
+    function getToken() {
+        try {
+            const token = window.localStorage.getItem(STORAGE_KEY);
+            if (!token) return null;
+            if (isExpired(token)) {
+                window.localStorage.removeItem(STORAGE_KEY);
+                return null;
+            }
+            return token;
+        } catch (err) {
+            console.warn('Unable to access auth storage', err);
+            return null;
+        }
+    }
+
+    function saveToken(token) {
+        try {
+            window.localStorage.setItem(STORAGE_KEY, token);
+        } catch (error) {
+            console.warn('Unable to persist auth token', error);
+        }
+    }
+
+    function clear() {
+        try {
+            window.localStorage.removeItem(STORAGE_KEY);
+        } catch (error) {
+            console.warn('Unable to clear auth token', error);
+        }
+    }
+
+    function ensureAuthenticated({ redirect = true } = {}) {
+        const token = getToken();
+        if (!token && redirect && window.location.pathname !== '/login') {
+            window.location.replace('/login');
+        }
+        return !!token;
+    }
+
+    async function authorizedFetch(resource, options = {}) {
+        const token = getToken();
+        if (!token) {
+            ensureAuthenticated();
+            throw new Error('Authentication required');
+        }
+
+        const init = { ...options };
+        init.headers = new Headers(options.headers || {});
+        if (!init.headers.has('Authorization')) {
+            init.headers.set('Authorization', `Bearer ${token}`);
+        }
+        if (init.body && !(init.body instanceof FormData) && !init.headers.has('Content-Type')) {
+            init.headers.set('Content-Type', 'application/json');
+        }
+
+        const response = await fetch(resource, init);
+        if (response.status === 401 || response.status === 403) {
+            clear();
+            ensureAuthenticated();
+            throw new Error('Session expired');
+        }
+        return response;
+    }
+
+    function isAuthenticated() {
+        return ensureAuthenticated({ redirect: false });
+    }
+
+    function logout({ redirect = true } = {}) {
+        clear();
+        if (redirect) {
+            window.location.replace('/login');
+        }
+    }
+
+    return {
+        saveToken,
+        clear,
+        decode,
+        getToken,
+        ensureAuthenticated,
+        authorizedFetch,
+        isAuthenticated,
+        logout,
+        STORAGE_KEY,
+    };
+})();
+
+window.Auth = Auth;
+
 class NavigationManager {
     constructor() {
         this.routes = new Map();
@@ -19,23 +132,35 @@ class NavigationManager {
     setupRoutes() {
         // Define all valid routes
         const routes = [
-            { path: '/', title: 'Home' },
-            { path: '/dashboard', title: 'Dashboard' },
-            { path: '/nphies', title: 'NPHIES Integration' },
-            { path: '/claims', title: 'Claims Processing' },
-            { path: '/eligibility', title: 'Eligibility Check' },
-            { path: '/pre-authorization', title: 'Pre-Authorization' },
-            { path: '/ai-assistant', title: 'AI Assistant' },
-            { path: '/health-services', title: 'AWS Health Services' },
-            { path: '/profile', title: 'Profile' },
-            { path: '/settings', title: 'Settings' },
-            { path: '/notifications', title: 'Notifications' },
-            { path: '/login', title: 'Login' }
+            { path: '/', title: 'Home', auth: false },
+            { path: '/login', title: 'Login', auth: false },
+            { path: '/dashboard', title: 'Dashboard', auth: true },
+            { path: '/nphies', title: 'NPHIES Integration', auth: true },
+            { path: '/claims', title: 'Claims Processing', auth: true },
+            { path: '/eligibility', title: 'Eligibility Check', auth: true },
+            { path: '/pre-authorization', title: 'Pre-Authorization', auth: true },
+            { path: '/ai-assistant', title: 'AI Assistant', auth: true },
+            { path: '/health-services', title: 'AWS Health Services', auth: true },
+            { path: '/profile', title: 'Profile', auth: true },
+            { path: '/settings', title: 'Settings', auth: true },
+            { path: '/notifications', title: 'Notifications', auth: true }
         ];
 
         routes.forEach(route => {
             this.routes.set(route.path, route);
         });
+    }
+
+    requiresAuth(path) {
+        const route = this.routes.get(path);
+        return route ? !!route.auth : false;
+    }
+
+    ensureAuthFor(path) {
+        if (this.requiresAuth(path)) {
+            return Auth.ensureAuthenticated();
+        }
+        return true;
     }
 
     setupEventListeners() {
@@ -51,6 +176,7 @@ class NavigationManager {
                 // Check if it's a valid route
                 if (this.routes.has(href)) {
                     e.preventDefault();
+                    if (!this.ensureAuthFor(href)) return;
                     this.navigate(href);
                 }
             }
@@ -66,6 +192,7 @@ class NavigationManager {
         if (path === this.currentPath) return;
 
         try {
+            if (!this.ensureAuthFor(path)) return;
             // Update browser history
             window.history.pushState({ path }, '', path);
             
@@ -82,6 +209,16 @@ class NavigationManager {
         const route = this.routes.get(path);
         if (!route) {
             this.handle404(path);
+            return;
+        }
+
+        if (!this.ensureAuthFor(path)) {
+            return;
+        }
+
+        if (path === '/login' && Auth.isAuthenticated()) {
+            window.history.replaceState({ path: '/dashboard' }, '', '/dashboard');
+            await this.handleRoute('/dashboard');
             return;
         }
 
@@ -230,7 +367,11 @@ class NavigationManager {
 
     async loadDashboardData() {
         try {
-            const response = await fetch('/health');
+            const response = await Auth.authorizedFetch('/system/status', {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
             if (response.ok) {
                 const data = await response.json();
                 this.updateDashboardMetrics(data);
@@ -244,8 +385,19 @@ class NavigationManager {
         // Update dashboard with real data
         const statusElement = document.getElementById('system-status');
         if (statusElement) {
-            statusElement.textContent = data.status || 'Unknown';
-            statusElement.className = `status ${data.status || 'unknown'}`;
+            const status = data.system_health || data.status || 'unknown';
+            statusElement.textContent = status;
+            statusElement.className = `status ${status.toLowerCase()}`;
+        }
+
+        const uptimeEl = document.getElementById('system-uptime');
+        if (uptimeEl && data.application?.uptime_hours !== undefined) {
+            uptimeEl.textContent = `${data.application.uptime_hours}h`;
+        }
+
+        const aiStatusEl = document.getElementById('ai-status');
+        if (aiStatusEl && data.features) {
+            aiStatusEl.textContent = data.features.ai_analytics ? 'Active' : 'Idle';
         }
     }
 
@@ -260,53 +412,135 @@ class NavigationManager {
     }
 
     async handleChatMessage(form) {
+        if (!Auth.ensureAuthenticated()) return;
+
         const messageInput = form.querySelector('input[name="message"]');
         const message = messageInput.value.trim();
-        
+
         if (!message) return;
-        
+
+        // Add user message to chat
+        this.addChatMessage(message, 'user');
+        messageInput.value = '';
+
+        const aiPlaceholder = this.addChatMessage('Analyzing your query…', 'ai');
+        const updatePlaceholder = (text) => {
+            if (!aiPlaceholder) return;
+            const paragraph = aiPlaceholder.querySelector('p');
+            if (paragraph) paragraph.textContent = text;
+        };
+
         try {
-            // Add user message to chat
-            this.addChatMessage(message, 'user');
-            
-            // Clear input
-            messageInput.value = '';
-            
-            // Send to AI
-            const response = await fetch('/ai/chat', {
+            const response = await Auth.authorizedFetch('/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'text/event-stream'
+                },
+                body: JSON.stringify({
+                    message,
+                    language: 'en'
+                })
             });
-            
-            if (response.ok) {
-                const data = await response.json();
-                this.addChatMessage(data.response, 'ai');
-            } else {
-                this.addChatMessage('Sorry, I encountered an error. Please try again.', 'ai');
+
+            if (!response.ok) {
+                throw new Error(`AI response failed: ${response.status}`);
             }
-            
+
+            if (!response.body) {
+                throw new Error('Stream not supported by this browser');
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let finalMessage = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const chunks = buffer.split('\n\n');
+                buffer = chunks.pop() || '';
+
+                for (const chunk of chunks) {
+                    if (!chunk.startsWith('data:')) continue;
+                    const payloadRaw = chunk.replace(/^data:\s*/, '');
+                    if (!payloadRaw) continue;
+                    let payload;
+                    try {
+                        payload = JSON.parse(payloadRaw);
+                    } catch (parseError) {
+                        console.warn('Failed to parse AI chunk', parseError);
+                        continue;
+                    }
+
+                    switch (payload.type) {
+                        case 'thinking':
+                            updatePlaceholder('Analyzing your query…');
+                            break;
+                        case 'partial_response':
+                            finalMessage = payload.text || finalMessage;
+                            updatePlaceholder(finalMessage);
+                            break;
+                        case 'final_response':
+                            finalMessage = payload.message || finalMessage;
+                            updatePlaceholder(finalMessage);
+                            break;
+                        case 'session_end':
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
+            if (!finalMessage) {
+                updatePlaceholder('I did not produce a response. Please try again.');
+            }
+
         } catch (error) {
             console.error('Chat error:', error);
-            this.addChatMessage('Connection error. Please check your internet connection.', 'ai');
+            updatePlaceholder('AI assistant is unavailable right now. Please try again later.');
         }
     }
 
-    addChatMessage(message, sender) {
+    addChatMessage(message, sender, options = {}) {
         const chatContainer = document.getElementById('chat-messages');
-        if (!chatContainer) return;
-        
+        if (!chatContainer) return null;
+
         const messageDiv = document.createElement('div');
         messageDiv.className = `chat-message ${sender}`;
-        messageDiv.innerHTML = `
+        if (options.id) {
+            messageDiv.dataset.messageId = options.id;
+        }
+
+        const timestamp = options.timestamp instanceof Date ? options.timestamp : new Date();
+        const contentHtml = `
             <div class="message-content">
                 <p>${message}</p>
-                <span class="message-time">${new Date().toLocaleTimeString()}</span>
+                <span class="message-time">${timestamp.toLocaleTimeString()}</span>
             </div>
         `;
-        
-        chatContainer.appendChild(messageDiv);
+
+        messageDiv.innerHTML = contentHtml;
+
+        const content = messageDiv.querySelector('.message-content');
+        if (content) {
+            const baseClasses = ['rounded-lg', 'p-4'];
+            const palette = sender === 'user' ? 'bg-gray-600' : 'bg-blue-600';
+            content.classList.add(palette, ...baseClasses);
+        }
+
+        if (options.replace && options.replace.parentNode) {
+            options.replace.parentNode.replaceChild(messageDiv, options.replace);
+        } else {
+            chatContainer.appendChild(messageDiv);
+        }
+
         chatContainer.scrollTop = chatContainer.scrollHeight;
+        return messageDiv;
     }
 
     setupClaimsForm() {
@@ -326,23 +560,51 @@ class NavigationManager {
         try {
             this.showLoading();
             
-            const response = await fetch('/claims/submit', {
+            const payload = {
+                patient_id: data.patient_id,
+                provider_id: data.provider_id,
+                procedure_codes: (data.procedure_codes || data.procedure_code || '').split(',').map(code => code.trim()).filter(Boolean),
+                diagnosis_codes: (data.diagnosis_codes || '').split(',').map(code => code.trim()).filter(Boolean),
+                amount: parseFloat(data.amount || '0'),
+                service_date: data.service_date || new Date().toISOString().slice(0, 10)
+            };
+
+            if (!payload.diagnosis_codes.length) {
+                payload.diagnosis_codes = ['Z00.0'];
+            }
+            if (!payload.procedure_codes.length) {
+                throw new Error('Please provide at least one procedure code');
+            }
+            if (!payload.patient_id || !payload.provider_id || !payload.amount) {
+                throw new Error('Patient ID, Provider ID, and Amount are required');
+            }
+
+            const response = await Auth.authorizedFetch('/nphies/claim', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                body: JSON.stringify(payload)
             });
             
             if (response.ok) {
                 const result = await response.json();
                 this.showSuccess('Claim submitted successfully!');
                 form.reset();
+                const summary = document.getElementById('claim-result');
+                if (summary) {
+                    summary.innerHTML = `
+                        <div class="p-4 bg-white/10 rounded-lg">
+                            <p class="text-sm mb-2">Claim ID: <strong>${result.claim_id}</strong></p>
+                            <p class="text-sm mb-2">Confidence: ${result.ai_analysis?.confidence || 'N/A'}</p>
+                            <p class="text-sm">Status: ${result.nphies_status}</p>
+                        </div>
+                    `;
+                }
             } else {
                 this.showError('Failed to submit claim. Please try again.');
             }
             
         } catch (error) {
             console.error('Claims submission error:', error);
-            this.showError('Network error. Please check your connection.');
+            this.showError(error.message || 'Network error. Please check your connection.');
         } finally {
             this.hideLoading();
         }
@@ -364,6 +626,7 @@ class NavigationManager {
 
     handleInitialLoad() {
         // Handle the current page on initial load
+        if (!this.ensureAuthFor(this.currentPath)) return;
         this.handleRoute(this.currentPath);
     }
 

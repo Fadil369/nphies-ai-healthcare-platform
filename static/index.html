@@ -247,8 +247,8 @@
                     </div>
                 `;
                 const sheet = window.BottomSheet.create(content);
-                window.BottomSheet.open();
-                setTimeout(()=> document.getElementById('close-sheet')?.addEventListener('click', ()=> window.BottomSheet.close()), 50);
+                sheet.open();
+                setTimeout(()=> document.getElementById('close-sheet')?.addEventListener('click', ()=> sheet.close()), 50);
             });
         </script>
     

@@ -39,7 +39,8 @@
             document.body.appendChild(this.sheet);
             // small delay for CSS transitions
             requestAnimationFrame(()=> this.sheet.classList.add('open'));
-            document.addEventListener('keydown', this._onKey);
+            // Listen on window to match dispatched keyboard events across environments
+            if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('keydown', this._onKey);
             // focus first tabbable element inside or the container
             var focusable = this.sheet.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
             (focusable || this.sheet).focus();
@@ -50,7 +51,7 @@
             if (this.sheet !== container) return;
             this.sheet.classList.remove('open');
             this.sheet.setAttribute('aria-hidden','true');
-            document.removeEventListener('keydown', this._onKey);
+            if (typeof window !== 'undefined' && window.removeEventListener) window.removeEventListener('keydown', this._onKey);
             setTimeout(()=> {
                 if (this.sheet && this.sheet.parentNode) this.sheet.parentNode.removeChild(this.sheet);
                 this.sheet = null;
@@ -70,12 +71,17 @@
             }
             // Focus trap: keep focus within sheet
             if (e.key === 'Tab'){
-                var focusables = Array.prototype.slice.call(this.sheet.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(function(el){ return !el.disabled && el.offsetParent !== null; });
+                var focusables = Array.prototype.slice.call(this.sheet.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(function(el){ return !el.disabled && (el.offsetParent !== null || el.getClientRects().length); });
                 if (focusables.length === 0) { e.preventDefault(); return; }
-                var first = focusables[0];
-                var last = focusables[focusables.length-1];
-                if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
-                if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+                var idx = focusables.indexOf(document.activeElement);
+                if (e.shiftKey){
+                    // move backward
+                    var prev = (idx > 0) ? focusables[idx-1] : focusables[focusables.length-1];
+                    e.preventDefault(); prev.focus();
+                } else {
+                    var next = (idx >= 0 && idx < focusables.length-1) ? focusables[idx+1] : focusables[0];
+                    e.preventDefault(); next.focus();
+                }
             }
         }
     }

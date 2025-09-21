@@ -3,18 +3,43 @@ import Head from 'next/head'
 
 export default function Dashboard() {
   const [healthStatus, setHealthStatus] = useState<string>('Checking...')
-  const [apiUrl] = useState('http://brainsait-nphies-alb-1821626782.us-east-1.elb.amazonaws.com') // Updated with actual ALB endpoint
+  const [token, setToken] = useState<string | null>(null)
+  const [apiUrl, setApiUrl] = useState<string>(process.env.NEXT_PUBLIC_API_URL || '')
 
   useEffect(() => {
-    checkApiHealth()
+    if (typeof window !== 'undefined') {
+      const storedToken = window.localStorage.getItem('nphies_ai_access_token')
+      setToken(storedToken)
+      if (!apiUrl) {
+        setApiUrl(window.location.origin)
+      }
+    }
   }, [])
 
+  useEffect(() => {
+    if (token) {
+      checkApiHealth()
+    } else {
+      setHealthStatus('Login required')
+    }
+  }, [token])
+
   const checkApiHealth = async () => {
+    if (!token) {
+      setHealthStatus('Login required')
+      return
+    }
+
     try {
-      const response = await fetch(`${apiUrl}/health`)
+      const base = apiUrl || (typeof window !== 'undefined' ? window.location.origin : '')
+      const response = await fetch(`${base}/system/status`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
       if (response.ok) {
         const data = await response.json()
-        setHealthStatus(`Healthy - ${data.version}`)
+        setHealthStatus(`Healthy - v${data?.application?.version || 'N/A'}`)
       } else {
         setHealthStatus('Unhealthy')
       }
@@ -24,11 +49,17 @@ export default function Dashboard() {
   }
 
   const testChat = async () => {
+    if (!token) {
+      alert('Please sign in via the web portal before testing the chat API.')
+      return
+    }
     try {
-      const response = await fetch(`${apiUrl}/chat`, {
+      const base = apiUrl || (typeof window !== 'undefined' ? window.location.origin : '')
+      const response = await fetch(`${base}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
           message: 'Test healthcare query',

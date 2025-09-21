@@ -122,56 +122,12 @@
     <script src="/static/js/arrow-navigation.js"></script>
     
     <script>
-        // Quick message function
         function sendQuickMessage(message) {
-            const messageInput = document.querySelector('input[name="message"]');
+            const form = document.getElementById('chat-form');
+            const messageInput = form?.querySelector('input[name="message"]');
+            if (!form || !messageInput) return;
             messageInput.value = message;
-            document.getElementById('chat-form').dispatchEvent(new Event('submit'));
-        }
-        
-        // Demo responses for testing
-        const demoResponses = {
-            'How do I submit a claim?': 'To submit a claim, go to the Claims section and fill out the required fields: Patient ID, Procedure Code, Amount, and Provider ID. The system will validate the information and submit it to NPHIES automatically.',
-            'Check eligibility status': 'I can help you check patient eligibility. Please provide the patient ID and insurance details, and I\'ll verify their coverage status with the NPHIES system.',
-            'Explain medical codes': 'Medical codes are standardized identifiers for procedures, diagnoses, and services. Common types include CPT codes for procedures, ICD-10 codes for diagnoses, and HCPCS codes for supplies and services.',
-            'Show system status': 'Current system status: All services are operational. API response time: 120ms. Database connectivity: Good. AI services: Active. Last updated: Just now.'
-        };
-        
-        // Add demo response for testing
-        document.getElementById('chat-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const messageInput = e.target.querySelector('input[name="message"]');
-            const message = messageInput.value.trim();
-            
-            if (!message) return;
-            
-            // Add user message
-            addChatMessage(message, 'user');
-            messageInput.value = '';
-            
-            // Add AI response (demo)
-            setTimeout(() => {
-                const response = demoResponses[message] || 'I understand your question. In a production environment, I would provide detailed healthcare guidance and connect to real AI services for comprehensive assistance.';
-                addChatMessage(response, 'ai');
-            }, 1000);
-        });
-        
-        function addChatMessage(message, sender) {
-            const chatContainer = document.getElementById('chat-messages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message ${sender} flex`;
-            
-            const bgColor = sender === 'user' ? 'bg-gray-600' : 'bg-blue-600';
-            
-            messageDiv.innerHTML = `
-                <div class="message-content ${bgColor} rounded-lg p-4">
-                    <p>${message}</p>
-                    <span class="text-xs opacity-75 block mt-2">${new Date().toLocaleTimeString()}</span>
-                </div>
-            `;
-            
-            chatContainer.appendChild(messageDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
         }
     </script>
 </body>
