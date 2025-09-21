@@ -1,364 +1,248 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChartBarIcon, UserGroupIcon, DocumentTextIcon, CogIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { useEffect, useMemo, useState } from 'react'
+import Head from 'next/head'
+import Link from 'next/link'
 
-interface DashboardStats {
-  totalClaims: number;
-  activeSessions: number;
-  processedImages: number;
-  complianceScore: number;
-  todayClaims: number;
-  avgProcessingTime: number;
+interface StatCard {
+  id: string
+  label: string
+  value: string
+  accent?: string
+  description?: string
 }
 
-interface NPHIESClaim {
-  id: string;
-  patientId: string;
-  providerId: string;
-  status: 'pending' | 'approved' | 'rejected' | 'processing';
-  amount: number;
-  createdAt: string;
-  aiAnalysis: {
-    confidence: number;
-    recommendations: string[];
-  };
+interface QuickAction {
+  id: string
+  label: string
+  href: string
+  accent: string
 }
 
-interface AgentMetrics {
-  agentName: string;
-  totalRequests: number;
-  avgResponseTime: number;
-  successRate: number;
-  status: 'active' | 'inactive' | 'maintenance';
+interface ActivityItem {
+  id: string
+  message: string
+  indicator: string
+  tone: string
 }
 
-const API_URL = 'http://brainsait-nphies-alb-1821626782.us-east-1.elb.amazonaws.com';
+interface HealthItem {
+  id: string
+  label: string
+  status: string
+  tone: string
+}
 
-const BrainSAITColors = {
-  midnightBlue: '#1a365d',
-  medicalBlue: '#2b6cb8',
-  signalTeal: '#0ea5e9',
-  professionalGray: '#64748b',
-  glassMorphBg: 'rgba(255, 255, 255, 0.1)',
-  glassMorphBorder: 'rgba(255, 255, 255, 0.2)'
-};
+const statCards: StatCard[] = [
+  { id: 'claims', label: 'Total Claims', value: '1,234', accent: 'text-blue-400', description: 'Submitted this quarter' },
+  { id: 'system-status', label: 'System Status', value: 'Healthy', accent: 'text-green-400', description: 'Realtime API monitoring' },
+  { id: 'ai-insights', label: 'AI Insights', value: 'Loading…', accent: 'text-purple-400', description: 'Next analysis pending' },
+  { id: 'active-users', label: 'Active Users', value: '456', accent: 'text-yellow-400', description: 'Authenticated staff' }
+]
 
-const GlassCard = ({ children, className = '' }: any) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className={`bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 ${className}`}
-  >
-    {children}
-  </motion.div>
-);
+const quickActions: QuickAction[] = [
+  { id: 'claims', label: 'Submit New Claim', href: '/claims', accent: 'from-blue-600 to-blue-700' },
+  { id: 'eligibility', label: 'Check Eligibility', href: '/eligibility', accent: 'from-green-600 to-green-700' },
+  { id: 'pre-auth', label: 'Request Pre-Auth', href: '/pre-authorization', accent: 'from-purple-600 to-purple-700' }
+]
 
-const MeshGradientBackground = () => (
-  <div className="fixed inset-0 -z-10">
-    <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-blue-800 to-cyan-600" />
-    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-blue-500/20 to-cyan-400/20" />
-  </div>
-);
+const recentActivity: ActivityItem[] = [
+  { id: 'activity-1', message: 'Claim #12345 processed', indicator: '✓', tone: 'text-green-400' },
+  { id: 'activity-2', message: 'Eligibility check completed', indicator: 'ℹ', tone: 'text-blue-400' },
+  { id: 'activity-3', message: 'AI analysis generated', indicator: '🤖', tone: 'text-purple-400' }
+]
 
-export default function NPHIESDashboard() {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [language, setLanguage] = useState<'ar' | 'en'>('ar');
-  const [isRTL, setIsRTL] = useState(true);
-  const [stats, setStats] = useState<DashboardStats>({
-    totalClaims: 0,
-    activeSessions: 0,
-    processedImages: 0,
-    complianceScore: 0,
-    todayClaims: 0,
-    avgProcessingTime: 0
-  });
-  const [claims, setClaims] = useState<NPHIESClaim[]>([]);
-  const [agents, setAgents] = useState<AgentMetrics[]>([]);
+const systemHealth: HealthItem[] = [
+  { id: 'api', label: 'API Status', status: 'Online', tone: 'text-green-400' },
+  { id: 'database', label: 'Database', status: 'Connected', tone: 'text-green-400' },
+  { id: 'ai', label: 'AI Services', status: 'Active', tone: 'text-green-400' }
+]
+
+const navigationLinks = [
+  { id: 'home', label: 'Home', href: '/' },
+  { id: 'nphies', label: 'NPHIES', href: '/nphies' },
+  { id: 'claims', label: 'Claims', href: '/claims' },
+  { id: 'assistant', label: 'AI Assistant', href: '/ai-assistant' },
+  { id: 'health-services', label: 'Health Services', href: '/health-services' }
+]
+
+const primaryNavigation = [
+  { id: 'nav-home', label: 'Home', href: '/' },
+  { id: 'nav-dashboard', label: 'Dashboard', href: '/dashboard', active: true },
+  { id: 'nav-nphies', label: 'NPHIES', href: '/nphies' },
+  { id: 'nav-claims', label: 'Claims', href: '/claims' },
+  { id: 'nav-assistant', label: 'AI Assistant', href: '/ai-assistant' }
+]
+
+function formatDuration(seconds: number): string {
+  const hrs = Math.floor(seconds / 3600)
+  const mins = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+  const padded = [hrs, mins, secs].map((unit) => unit.toString().padStart(2, '0'))
+  return `${padded[0]}:${padded[1]}:${padded[2]}`
+}
+
+export default function DashboardPage() {
+  const [isDarkMode, setIsDarkMode] = useState(true)
+  const [uptimeSeconds, setUptimeSeconds] = useState(0)
+  const [aiStatus, setAiStatus] = useState('Loading…')
 
   useEffect(() => {
-    fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    const interval = setInterval(() => {
+      setUptimeSeconds((previous) => previous + 5)
+    }, 5000)
 
-  const fetchDashboardData = async () => {
-    try {
-      // Simulate API calls with mock data
-      setStats({
-        totalClaims: 1247,
-        activeSessions: 23,
-        processedImages: 89,
-        complianceScore: 98.5,
-        todayClaims: 156,
-        avgProcessingTime: 2.3
-      });
+    return () => clearInterval(interval)
+  }, [])
 
-      setClaims([
-        {
-          id: 'CLM-001',
-          patientId: 'PAT-12345',
-          providerId: 'PROV-001',
-          status: 'approved',
-          amount: 2500,
-          createdAt: '2025-09-19T20:30:00Z',
-          aiAnalysis: { confidence: 0.95, recommendations: ['Claim validated', 'No issues found'] }
-        },
-        {
-          id: 'CLM-002',
-          patientId: 'PAT-67890',
-          providerId: 'PROV-002',
-          status: 'processing',
-          amount: 1800,
-          createdAt: '2025-09-19T21:15:00Z',
-          aiAnalysis: { confidence: 0.87, recommendations: ['Additional documentation needed'] }
-        }
-      ]);
+  useEffect(() => {
+    const timeout = setTimeout(() => setAiStatus('Operational'), 1500)
+    return () => clearTimeout(timeout)
+  }, [])
 
-      setAgents([
-        { agentName: 'MASTERLINC', totalRequests: 1247, avgResponseTime: 1.2, successRate: 98.5, status: 'active' },
-        { agentName: 'HEALTHCARELINC', totalRequests: 892, avgResponseTime: 2.1, successRate: 97.8, status: 'active' },
-        { agentName: 'CLINICALLINC', totalRequests: 634, avgResponseTime: 1.8, successRate: 99.1, status: 'active' },
-        { agentName: 'COMPLIANCELINC', totalRequests: 445, avgResponseTime: 0.9, successRate: 100, status: 'active' }
-      ]);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+  const uptimeLabel = useMemo(() => formatDuration(uptimeSeconds), [uptimeSeconds])
+
+  const statsWithLiveData = statCards.map((card) => {
+    if (card.id === 'system-status') {
+      return { ...card, description: `Uptime: ${uptimeLabel}`, value: 'Healthy' }
     }
-  };
 
-  const toggleLanguage = () => {
-    setLanguage(prev => prev === 'ar' ? 'en' : 'ar');
-    setIsRTL(prev => !prev);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved': case 'active': return 'text-green-400';
-      case 'rejected': case 'inactive': return 'text-red-400';
-      case 'processing': case 'maintenance': return 'text-yellow-400';
-      default: return 'text-gray-400';
+    if (card.id === 'ai-insights') {
+      return { ...card, value: aiStatus }
     }
-  };
 
-  const tabs = [
-    { id: 'overview', label: { ar: 'نظرة عامة', en: 'Overview' }, icon: ChartBarIcon },
-    { id: 'claims', label: { ar: 'المطالبات', en: 'Claims' }, icon: DocumentTextIcon },
-    { id: 'agents', label: { ar: 'الوكلاء الذكيون', en: 'AI Agents' }, icon: UserGroupIcon },
-    { id: 'compliance', label: { ar: 'الامتثال', en: 'Compliance' }, icon: ShieldCheckIcon }
-  ];
+    return card
+  })
 
   return (
-    <div className={`min-h-screen text-white ${isRTL ? 'rtl' : 'ltr'}`}>
-      <MeshGradientBackground />
-      
-      {/* Header */}
-      <GlassCard className="m-6 mb-4">
-        <div className={`flex ${isRTL ? 'flex-row-reverse' : 'flex-row'} justify-between items-center`}>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent">
-            {language === 'ar' ? 'لوحة تحكم برين سايت - نفيس' : 'BrainSAIT NPHIES Dashboard'}
-          </h1>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={toggleLanguage}
-              className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
-            >
-              {language.toUpperCase()}
-            </button>
-            <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-            <span className="text-sm text-green-400">
-              {language === 'ar' ? 'متصل' : 'Connected'}
-            </span>
+    <>
+      <Head>
+        <title>Dashboard - NPHIES-AI Healthcare Platform</title>
+        <meta
+          name="description"
+          content="Operational dashboard for the NPHIES-AI healthcare platform with real-time insights and quick actions."
+        />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
+
+      <div className={`${isDarkMode ? 'dashboard-gradient-dark text-white' : 'dashboard-gradient-light text-slate-900'} min-h-screen font-sans transition-colors`}>
+        <nav className="glass-effect border-b border-white/10">
+          <div className="container mx-auto flex h-16 items-center justify-between px-6">
+            <div className="flex items-center gap-6">
+              <span className="text-xl font-semibold">🏥 NPHIES-AI</span>
+              <div className="hidden gap-6 md:flex">
+                {primaryNavigation.map((item) => (
+                  <Link
+                    key={item.id}
+                    className={`text-sm transition-colors ${item.active ? 'text-blue-400 font-medium' : 'text-gray-300 hover:text-white'}`}
+                    href={item.href}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <Link className="touch-target text-gray-300 transition hover:text-white" href="/profile">
+                Profile
+              </Link>
+              <Link className="touch-target text-gray-300 transition hover:text-white" href="/settings">
+                Settings
+              </Link>
+              <button
+                aria-label="Toggle theme"
+                className="touch-target text-lg"
+                type="button"
+                onClick={() => setIsDarkMode((previous) => !previous)}
+              >
+                {isDarkMode ? '🌓' : '☀️'}
+              </button>
+            </div>
           </div>
-        </div>
-      </GlassCard>
+        </nav>
 
-      {/* Navigation */}
-      <div className="mx-6 mb-6">
-        <div className="flex gap-2 bg-white/5 p-2 rounded-2xl">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
-                activeTab === tab.id
-                  ? 'bg-white/20 text-white'
-                  : 'text-white/70 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <tab.icon className="w-5 h-5" />
-              <span>{tab.label[language]}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+        <main className="container mx-auto px-6 py-12">
+          <header className="mb-10">
+            <h1 className="text-3xl font-bold">Healthcare Dashboard</h1>
+            <p className="mt-2 text-gray-300">Monitor your healthcare operations and AI insights</p>
+          </header>
 
-      {/* Content */}
-      <div className="mx-6">
-        <AnimatePresence mode="wait">
-          {activeTab === 'overview' && (
-            <motion.div
-              key="overview"
-              initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: isRTL ? 20 : -20 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-            >
-              <GlassCard>
-                <div className="text-center">
-                  <DocumentTextIcon className="w-8 h-8 mx-auto mb-2 text-cyan-400" />
-                  <div className="text-2xl font-bold">{stats.totalClaims.toLocaleString()}</div>
-                  <div className="text-sm text-white/70">
-                    {language === 'ar' ? 'إجمالي المطالبات' : 'Total Claims'}
+          <section className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {statsWithLiveData.map((card) => (
+              <div key={card.id} className="glass-effect rounded-xl p-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm text-gray-400">{card.label}</p>
+                    <p className={`text-2xl font-bold ${card.accent ?? ''}`}>{card.value}</p>
+                    {card.description && <p className="mt-1 text-xs text-gray-400">{card.description}</p>}
                   </div>
+                  <span aria-hidden className="text-2xl">
+                    {card.id === 'claims' && '📊'}
+                    {card.id === 'system-status' && '✅'}
+                    {card.id === 'ai-insights' && '🤖'}
+                    {card.id === 'active-users' && '👥'}
+                  </span>
                 </div>
-              </GlassCard>
+              </div>
+            ))}
+          </section>
 
-              <GlassCard>
-                <div className="text-center">
-                  <UserGroupIcon className="w-8 h-8 mx-auto mb-2 text-green-400" />
-                  <div className="text-2xl font-bold">{stats.activeSessions}</div>
-                  <div className="text-sm text-white/70">
-                    {language === 'ar' ? 'الجلسات النشطة' : 'Active Sessions'}
-                  </div>
-                </div>
-              </GlassCard>
+          <section className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="glass-effect rounded-xl p-6">
+              <h2 className="mb-4 text-lg font-semibold">Quick Actions</h2>
+              <div className="space-y-3">
+                {quickActions.map((action) => (
+                  <Link
+                    key={action.id}
+                    className={`block rounded-lg bg-gradient-to-r ${action.accent} px-4 py-2 text-sm font-medium transition hover:opacity-90`}
+                    href={action.href}
+                  >
+                    {action.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
 
-              <GlassCard>
-                <div className="text-center">
-                  <ChartBarIcon className="w-8 h-8 mx-auto mb-2 text-blue-400" />
-                  <div className="text-2xl font-bold">{stats.complianceScore}%</div>
-                  <div className="text-sm text-white/70">
-                    {language === 'ar' ? 'نقاط الامتثال' : 'Compliance Score'}
+            <div className="glass-effect rounded-xl p-6">
+              <h2 className="mb-4 text-lg font-semibold">Recent Activity</h2>
+              <div className="space-y-3 text-sm">
+                {recentActivity.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between">
+                    <span className="text-gray-300">{item.message}</span>
+                    <span className={item.tone}>{item.indicator}</span>
                   </div>
-                </div>
-              </GlassCard>
+                ))}
+              </div>
+            </div>
 
-              <GlassCard>
-                <div className="text-center">
-                  <CogIcon className="w-8 h-8 mx-auto mb-2 text-purple-400" />
-                  <div className="text-2xl font-bold">{stats.avgProcessingTime}s</div>
-                  <div className="text-sm text-white/70">
-                    {language === 'ar' ? 'متوسط وقت المعالجة' : 'Avg Processing Time'}
+            <div className="glass-effect rounded-xl p-6">
+              <h2 className="mb-4 text-lg font-semibold">System Health</h2>
+              <div className="space-y-3">
+                {systemHealth.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between">
+                    <span className="text-gray-300">{item.label}</span>
+                    <span className={item.tone}>{item.status}</span>
                   </div>
-                </div>
-              </GlassCard>
-            </motion.div>
-          )}
+                ))}
+              </div>
+            </div>
+          </section>
 
-          {activeTab === 'claims' && (
-            <motion.div
-              key="claims"
-              initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: isRTL ? 20 : -20 }}
-            >
-              <GlassCard>
-                <h2 className="text-xl font-bold mb-4">
-                  {language === 'ar' ? 'المطالبات الحديثة' : 'Recent Claims'}
-                </h2>
-                <div className="space-y-4">
-                  {claims.map((claim) => (
-                    <div key={claim.id} className="bg-white/5 rounded-lg p-4">
-                      <div className={`flex ${isRTL ? 'flex-row-reverse' : 'flex-row'} justify-between items-start`}>
-                        <div>
-                          <div className="font-semibold">{claim.id}</div>
-                          <div className="text-sm text-white/70">
-                            {language === 'ar' ? 'المريض:' : 'Patient:'} {claim.patientId}
-                          </div>
-                          <div className="text-sm text-white/70">
-                            {language === 'ar' ? 'المبلغ:' : 'Amount:'} {claim.amount.toLocaleString()} SAR
-                          </div>
-                        </div>
-                        <div className={`text-right ${isRTL ? 'text-left' : 'text-right'}`}>
-                          <div className={`font-semibold ${getStatusColor(claim.status)}`}>
-                            {claim.status.toUpperCase()}
-                          </div>
-                          <div className="text-sm text-white/70">
-                            {language === 'ar' ? 'الثقة:' : 'Confidence:'} {(claim.aiAnalysis.confidence * 100).toFixed(1)}%
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </GlassCard>
-            </motion.div>
-          )}
-
-          {activeTab === 'agents' && (
-            <motion.div
-              key="agents"
-              initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: isRTL ? 20 : -20 }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
-            >
-              {agents.map((agent) => (
-                <GlassCard key={agent.agentName}>
-                  <div className={`flex ${isRTL ? 'flex-row-reverse' : 'flex-row'} justify-between items-start mb-4`}>
-                    <h3 className="text-lg font-bold">{agent.agentName}</h3>
-                    <div className={`w-3 h-3 rounded-full ${getStatusColor(agent.status).replace('text-', 'bg-')}`} />
-                  </div>
-                  <div className="space-y-2">
-                    <div className={`flex ${isRTL ? 'flex-row-reverse' : 'flex-row'} justify-between`}>
-                      <span className="text-white/70">
-                        {language === 'ar' ? 'إجمالي الطلبات:' : 'Total Requests:'}
-                      </span>
-                      <span>{agent.totalRequests.toLocaleString()}</span>
-                    </div>
-                    <div className={`flex ${isRTL ? 'flex-row-reverse' : 'flex-row'} justify-between`}>
-                      <span className="text-white/70">
-                        {language === 'ar' ? 'متوسط الاستجابة:' : 'Avg Response:'}
-                      </span>
-                      <span>{agent.avgResponseTime}s</span>
-                    </div>
-                    <div className={`flex ${isRTL ? 'flex-row-reverse' : 'flex-row'} justify-between`}>
-                      <span className="text-white/70">
-                        {language === 'ar' ? 'معدل النجاح:' : 'Success Rate:'}
-                      </span>
-                      <span className="text-green-400">{agent.successRate}%</span>
-                    </div>
-                  </div>
-                </GlassCard>
+          <section className="glass-effect rounded-xl p-6">
+            <h2 className="mb-4 text-lg font-semibold">Navigation Test</h2>
+            <p className="mb-4 text-gray-400">Test the enhanced navigation system:</p>
+            <div className="flex flex-wrap gap-3">
+              {navigationLinks.map((link) => (
+                <Link
+                  key={link.id}
+                  className="touch-target rounded-lg bg-gray-600 px-4 py-2 text-sm transition hover:bg-gray-700"
+                  href={link.href}
+                >
+                  {link.label}
+                </Link>
               ))}
-            </motion.div>
-          )}
-
-          {activeTab === 'compliance' && (
-            <motion.div
-              key="compliance"
-              initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: isRTL ? 20 : -20 }}
-            >
-              <GlassCard>
-                <h2 className="text-xl font-bold mb-4">
-                  {language === 'ar' ? 'حالة الامتثال' : 'Compliance Status'}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-green-400">98.5%</div>
-                    <div className="text-sm text-white/70">
-                      {language === 'ar' ? 'امتثال HIPAA' : 'HIPAA Compliance'}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-green-400">100%</div>
-                    <div className="text-sm text-white/70">
-                      {language === 'ar' ? 'امتثال NPHIES' : 'NPHIES Compliance'}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-blue-400">24/7</div>
-                    <div className="text-sm text-white/70">
-                      {language === 'ar' ? 'مراقبة الأمان' : 'Security Monitoring'}
-                    </div>
-                  </div>
-                </div>
-              </GlassCard>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </section>
+        </main>
       </div>
-    </div>
-  );
+    </>
+  )
 }
